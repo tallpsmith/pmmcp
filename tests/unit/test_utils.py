@@ -1,0 +1,109 @@
+"""Unit tests for pmmcp.utils — resolve_interval and parse_time_expr."""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+
+import pytest
+
+from pmmcp.utils import parse_time_expr, resolve_interval
+
+
+class TestResolveInterval:
+    def test_explicit_interval_passthrough(self):
+        assert resolve_interval("-1hour", "now", "15s") == "15s"
+        assert resolve_interval("-1hour", "now", "5min") == "5min"
+        assert resolve_interval("-1hour", "now", "1hour") == "1hour"
+        assert resolve_interval("-1hour", "now", "6hour") == "6hour"
+
+    def test_auto_le_1_hour(self):
+        assert resolve_interval("-1hour", "now", "auto") == "15s"
+        assert resolve_interval("-30min", "now", "auto") == "15s"
+        # Exactly 1 hour (3600s boundary)
+        assert resolve_interval("-1hour", "now", "auto") == "15s"
+
+    def test_auto_le_24_hours(self):
+        assert resolve_interval("-2hours", "now", "auto") == "5min"
+        assert resolve_interval("-12hours", "now", "auto") == "5min"
+        assert resolve_interval("-24hours", "now", "auto") == "5min"
+
+    def test_auto_le_7_days(self):
+        assert resolve_interval("-2days", "now", "auto") == "1hour"
+        assert resolve_interval("-7days", "now", "auto") == "1hour"
+
+    def test_auto_gt_7_days(self):
+        assert resolve_interval("-8days", "now", "auto") == "6hour"
+        assert resolve_interval("-30days", "now", "auto") == "6hour"
+
+    def test_boundary_3600s(self):
+        # 3600s exactly -> "15s"
+        assert resolve_interval("-1hour", "now", "auto") == "15s"
+        # 3601s -> "5min" (just over 1 hour)
+        assert resolve_interval("-61min", "now", "auto") == "5min"
+
+    def test_boundary_86400s(self):
+        # 24 hours exactly -> "5min"
+        assert resolve_interval("-24hours", "now", "auto") == "5min"
+        # 25 hours -> "1hour"
+        assert resolve_interval("-25hours", "now", "auto") == "1hour"
+
+    def test_boundary_604800s(self):
+        # 7 days exactly -> "1hour"
+        assert resolve_interval("-7days", "now", "auto") == "1hour"
+        # 8 days -> "6hour"
+        assert resolve_interval("-8days", "now", "auto") == "6hour"
+
+
+class TestParseTimeExpr:
+    def test_now(self):
+        result = parse_time_expr("now")
+        assert isinstance(result, datetime)
+        assert result.tzinfo == UTC
+
+    def test_relative_hours(self):
+        result = parse_time_expr("-1hour")
+        now = datetime.now(tz=UTC)
+        diff = (now - result).total_seconds()
+        assert 3500 < diff < 3700  # ~3600s
+
+    def test_relative_hours_plural(self):
+        result = parse_time_expr("-6hours")
+        now = datetime.now(tz=UTC)
+        diff = (now - result).total_seconds()
+        assert 21500 < diff < 21700  # ~21600s
+
+    def test_relative_minutes(self):
+        result = parse_time_expr("-30min")
+        now = datetime.now(tz=UTC)
+        diff = (now - result).total_seconds()
+        assert 1750 < diff < 1850  # ~1800s
+
+    def test_relative_days(self):
+        result = parse_time_expr("-7days")
+        now = datetime.now(tz=UTC)
+        diff = (now - result).total_seconds()
+        assert 7 * 86400 - 100 < diff < 7 * 86400 + 100
+
+    def test_relative_seconds(self):
+        result = parse_time_expr("-60s")
+        now = datetime.now(tz=UTC)
+        diff = (now - result).total_seconds()
+        assert 55 < diff < 65
+
+    def test_relative_weeks(self):
+        result = parse_time_expr("-2weeks")
+        now = datetime.now(tz=UTC)
+        diff = (now - result).total_seconds()
+        assert 2 * 7 * 86400 - 100 < diff < 2 * 7 * 86400 + 100
+
+    def test_iso8601_with_z(self):
+        result = parse_time_expr("2024-01-15T10:30:00Z")
+        assert result == datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
+
+    def test_iso8601_with_offset(self):
+        result = parse_time_expr("2024-01-15T10:30:00+00:00")
+        assert result == datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
+
+    def test_invalid_iso8601_raises(self):
+        with pytest.raises((ValueError, Exception)):
+            parse_time_expr("not-a-date")
