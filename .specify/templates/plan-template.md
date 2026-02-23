@@ -31,7 +31,15 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+For each principle, record **PASS**, **FAIL + justification**, or **N/A + reason**.
+
+| Principle | Status | Notes / Justification |
+|-----------|--------|----------------------|
+| I. Code Quality — linting enforced, single-responsibility, complexity ≤ 10, peer review | | |
+| II. Testing Standards — TDD cycle, ≥ 80% unit coverage, contract tests on interface changes | | |
+| III. UX Consistency — design system adherence, WCAG 2.1 AA, actionable error messages | | |
+| IV. Performance — latency SLA defined, performance budget in CI, profiling before optimization | | |
+| V. Simplicity — YAGNI posture, no speculative abstractions, complexity justified below | | |
 
 ## Project Structure
 

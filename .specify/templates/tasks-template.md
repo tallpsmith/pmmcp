@@ -8,7 +8,10 @@ description: "Task list template for feature implementation"
 **Input**: Design documents from `/specs/[###-feature-name]/`
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
+**Tests**: Per the project constitution (Principle II — Testing Standards, NON-NEGOTIABLE), tests
+are mandatory. Unit coverage MUST reach ≥ 80% and contract tests MUST accompany any interface
+change. The test tasks shown below MUST be included; adjust scope and file paths to match the
+feature's specific contracts and user stories.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -41,6 +44,9 @@ description: "Task list template for feature implementation"
   - Delivered as an MVP increment
   
   DO NOT keep these sample tasks in the generated tasks.md file.
+
+  IMPORTANT: Per the project constitution (Principle II), tests are MANDATORY — not optional.
+  Every user story MUST include test tasks. Adjust file paths and test types to the feature.
   ============================================================================
 -->
 
@@ -79,9 +85,9 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 1 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 1 *(required per Principle II — Testing Standards)*
 
-> **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
+> **NOTE: Write these tests FIRST, ensure they FAIL before implementation (Red-Green-Refactor)**
 
 - [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
 - [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
@@ -105,7 +111,7 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 2 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 2 *(required per Principle II — Testing Standards)*
 
 - [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
 - [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py
@@ -127,7 +133,7 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 3 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 3 *(required per Principle II — Testing Standards)*
 
 - [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
 - [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py
