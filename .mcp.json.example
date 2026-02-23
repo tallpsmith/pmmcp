@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "pmmcp": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "ghcr.io/<org>/pmmcp", "--pmproxy-url", "http://your-pmproxy-host:44322"]
+    }
+  }
+}
