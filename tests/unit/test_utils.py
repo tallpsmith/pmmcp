@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from pmmcp.utils import parse_time_expr, resolve_interval
+from pmmcp.utils import interval_to_seconds, natural_samples, parse_time_expr, resolve_interval
 
 
 class TestResolveInterval:
@@ -107,3 +107,52 @@ class TestParseTimeExpr:
     def test_invalid_iso8601_raises(self):
         with pytest.raises((ValueError, Exception)):
             parse_time_expr("not-a-date")
+
+
+class TestIntervalToSeconds:
+    def test_seconds(self):
+        assert interval_to_seconds("15s") == 15.0
+        assert interval_to_seconds("1second") == 1.0
+        assert interval_to_seconds("60secs") == 60.0
+
+    def test_minutes(self):
+        assert interval_to_seconds("5min") == 300.0
+        assert interval_to_seconds("1minute") == 60.0
+
+    def test_hours(self):
+        assert interval_to_seconds("1hour") == 3600.0
+        assert interval_to_seconds("6hour") == 21600.0
+        assert interval_to_seconds("1h") == 3600.0
+
+    def test_days(self):
+        assert interval_to_seconds("1day") == 86400.0
+        assert interval_to_seconds("7days") == 7 * 86400.0
+
+    def test_invalid_raises(self):
+        with pytest.raises(ValueError):
+            interval_to_seconds("auto")
+
+        with pytest.raises(ValueError):
+            interval_to_seconds("not-an-interval")
+
+
+class TestNaturalSamples:
+    def test_1hour_at_15s(self):
+        # 3600 / 15 = 240
+        assert natural_samples("-1hour", "now", "15s") == 240
+
+    def test_24hours_at_5min(self):
+        # 86400 / 300 = 288
+        assert natural_samples("-24hours", "now", "5min") == 288
+
+    def test_7days_at_1hour(self):
+        # 604800 / 3600 = 168
+        assert natural_samples("-7days", "now", "1hour") == 168
+
+    def test_30days_at_6hour(self):
+        # 2592000 / 21600 = 120
+        assert natural_samples("-30days", "now", "6hour") == 120
+
+    def test_minimum_is_one(self):
+        # Very short window
+        assert natural_samples("-1s", "now", "1hour") == 1

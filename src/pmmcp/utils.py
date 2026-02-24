@@ -1,3 +1,4 @@
+import math
 import re
 from datetime import UTC, datetime, timedelta
 
@@ -38,6 +39,35 @@ def parse_time_expr(expr: str, _now: datetime | None = None) -> datetime:
 
     # ISO-8601 / RFC 3339
     return datetime.fromisoformat(expr.replace("Z", "+00:00"))
+
+
+def interval_to_seconds(interval: str) -> float:
+    """Convert an interval string (e.g. '15s', '5min', '1hour', '6hour') to seconds."""
+    match = re.fullmatch(
+        r"(\d+(?:\.\d+)?)\s*(s|sec|secs|second|seconds|min|mins|minute|minutes|h|hour|hours|d|day|days)",
+        interval.strip(),
+    )
+    if not match:
+        raise ValueError(f"Cannot parse interval: {interval!r}")
+    amount = float(match.group(1))
+    unit = match.group(2)
+    if unit in ("s", "sec", "secs", "second", "seconds"):
+        return amount
+    elif unit in ("min", "mins", "minute", "minutes"):
+        return amount * 60
+    elif unit in ("h", "hour", "hours"):
+        return amount * 3600
+    elif unit in ("d", "day", "days"):
+        return amount * 86400
+    raise ValueError(f"Unknown unit: {unit!r}")  # pragma: no cover
+
+
+def natural_samples(start: str, end: str, resolved_interval: str) -> int:
+    """Compute how many samples naturally fit in the window given the interval."""
+    ref = datetime.now(tz=UTC)
+    window_secs = (parse_time_expr(end, _now=ref) - parse_time_expr(start, _now=ref)).total_seconds()
+    interval_secs = interval_to_seconds(resolved_interval)
+    return max(1, math.ceil(window_secs / interval_secs))
 
 
 def resolve_interval(start: str, end: str, interval: str) -> str:

@@ -293,6 +293,45 @@ async def test_fetch_timeseries_multi_metric_queries_separately(config):
 
 
 @respx.mock
+async def test_fetch_timeseries_natural_sample_cap(config):
+    """samples sent to pmproxy is capped at natural fit (window/interval), not raw limit."""
+    respx.get(f"{PMPROXY_BASE}/series/query").mock(
+        return_value=httpx.Response(200, json=[TEST_SERIES])
+    )
+    values_route = respx.get(f"{PMPROXY_BASE}/series/values").mock(
+        return_value=httpx.Response(200, json=_make_values(TEST_SERIES))
+    )
+    respx.get(f"{PMPROXY_BASE}/series/labels").mock(return_value=httpx.Response(200, json=[]))
+    respx.get(f"{PMPROXY_BASE}/series/instances").mock(return_value=httpx.Response(200, json=[]))
+
+    client = PmproxyClient(config)
+    try:
+        from pmmcp.tools.timeseries import _fetch_timeseries_impl
+
+        await _fetch_timeseries_impl(
+            client,
+            names=["kernel.all.cpu.user"],
+            start="-1hour",
+            end="now",
+            interval="15s",  # 3600/15 = 240 natural samples
+            host="",
+            instances=[],
+            limit=500,  # higher than natural — should be capped at 240
+            offset=0,
+            zone="UTC",
+        )
+        assert values_route.called
+        import re
+
+        url_str = str(values_route.calls[0].request.url)
+        m = re.search(r"samples=(\d+)", url_str)
+        assert m is not None, f"samples param missing from URL: {url_str}"
+        assert int(m.group(1)) == 240, f"Expected 240 natural samples, got {m.group(1)}"
+    finally:
+        await client.close()
+
+
+@respx.mock
 async def test_fetch_timeseries_remote_protocol_error_returns_mcp_error(config):
     """httpx.RemoteProtocolError (server disconnect) is surfaced as MCP error, not a crash."""
     respx.get(f"{PMPROXY_BASE}/series/query").mock(

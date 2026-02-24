@@ -6,6 +6,7 @@ import logging
 
 from pmmcp.client import PmproxyClient, PmproxyConnectionError, PmproxyError, PmproxyTimeoutError
 from pmmcp.server import get_client, mcp
+from pmmcp.utils import natural_samples as compute_natural_samples
 from pmmcp.utils import resolve_interval
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,10 @@ async def _resolve_series_and_fetch(
 ) -> dict:
     """Query series IDs by expression, then fetch values. Returns raw grouped data."""
     resolved = resolve_interval(start, end, interval)
+    try:
+        effective_samples = min(limit, compute_natural_samples(start, end, resolved))
+    except ValueError:
+        effective_samples = limit
 
     try:
         series_ids = await client.series_query(expr)
@@ -58,7 +63,7 @@ async def _resolve_series_and_fetch(
             start=start,
             finish=end,
             interval=resolved,
-            samples=limit,
+            samples=effective_samples,
         )
     except PmproxyTimeoutError as exc:
         return _mcp_error(
