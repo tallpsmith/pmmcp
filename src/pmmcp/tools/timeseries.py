@@ -138,22 +138,39 @@ async def _fetch_timeseries_impl(
     zone: str,
 ) -> dict:
     """Core implementation for pcp_fetch_timeseries."""
-    # Build series query from metric names + optional host label filter
-    if host:
-        parts = [f'{name}{{hostname=="{host}"}}' for name in names]
-        expr = " or ".join(parts) if len(parts) > 1 else parts[0]
-    else:
-        expr = " or ".join(names) if len(names) > 1 else names[0]
+    # Query each metric individually (pmproxy /series/query doesn't support
+    # multi-metric 'or' expressions reliably) and union the series IDs.
+    all_items: list[dict] = []
+    last_error: dict | None = None
 
-    return await _resolve_series_and_fetch(
-        client,
-        expr=expr,
-        start=start,
-        end=end,
-        interval=interval,
-        limit=limit,
-        offset=offset,
-    )
+    for name in names:
+        expr = f'{name}{{hostname=="{host}"}}' if host else name
+        result = await _resolve_series_and_fetch(
+            client,
+            expr=expr,
+            start=start,
+            end=end,
+            interval=interval,
+            limit=limit,
+            offset=0,
+        )
+        if result.get("isError"):
+            last_error = result
+            continue
+        all_items.extend(result.get("items", []))
+
+    if not all_items and last_error:
+        return last_error
+
+    total = len(all_items)
+    page = all_items[offset : offset + limit]
+    return {
+        "items": page,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "has_more": offset + limit < total,
+    }
 
 
 async def _query_series_impl(

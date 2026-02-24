@@ -246,6 +246,83 @@ async def test_query_series_raw_expression(config):
 
 
 @respx.mock
+async def test_fetch_timeseries_multi_metric_queries_separately(config):
+    """pcp_fetch_timeseries queries each metric individually, not with 'or' expression."""
+    SERIES_A = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    SERIES_B = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+
+    query_route = respx.get(f"{PMPROXY_BASE}/series/query").mock(
+        side_effect=[
+            httpx.Response(200, json=[SERIES_A]),
+            httpx.Response(200, json=[SERIES_B]),
+        ]
+    )
+    respx.get(f"{PMPROXY_BASE}/series/values").mock(
+        side_effect=[
+            httpx.Response(200, json=_make_values(SERIES_A)),
+            httpx.Response(200, json=_make_values(SERIES_B)),
+        ]
+    )
+    respx.get(f"{PMPROXY_BASE}/series/labels").mock(return_value=httpx.Response(200, json=[]))
+    respx.get(f"{PMPROXY_BASE}/series/instances").mock(return_value=httpx.Response(200, json=[]))
+
+    client = PmproxyClient(config)
+    try:
+        from pmmcp.tools.timeseries import _fetch_timeseries_impl
+
+        result = await _fetch_timeseries_impl(
+            client,
+            names=["kernel.all.cpu.user", "kernel.all.cpu.sys"],
+            start="-1hour",
+            end="now",
+            interval="5min",
+            host="",
+            instances=[],
+            limit=500,
+            offset=0,
+            zone="UTC",
+        )
+        assert not result.get("isError"), f"Got error: {result}"
+        # Two separate /series/query calls, one per metric
+        assert query_route.call_count == 2
+        exprs = [str(c.request.url) for c in query_route.calls]
+        assert all("or" not in e for e in exprs), "Should not use 'or' expression"
+        assert result["total"] == 2
+    finally:
+        await client.close()
+
+
+@respx.mock
+async def test_fetch_timeseries_remote_protocol_error_returns_mcp_error(config):
+    """httpx.RemoteProtocolError (server disconnect) is surfaced as MCP error, not a crash."""
+    respx.get(f"{PMPROXY_BASE}/series/query").mock(
+        side_effect=httpx.RemoteProtocolError("Server disconnected without sending a response.")
+    )
+
+    client = PmproxyClient(config)
+    try:
+        from pmmcp.tools.timeseries import _fetch_timeseries_impl
+
+        result = await _fetch_timeseries_impl(
+            client,
+            names=["kernel.all.cpu.user"],
+            start="-24hours",
+            end="now",
+            interval="5min",
+            host="",
+            instances=[],
+            limit=500,
+            offset=0,
+            zone="UTC",
+        )
+        assert result.get("isError") is True
+        text = result["content"][0]["text"]
+        assert "connection" in text.lower() or "disconnected" in text.lower()
+    finally:
+        await client.close()
+
+
+@respx.mock
 async def test_fetch_timeseries_timeout_returns_mcp_error(config):
     """pcp_fetch_timeseries timeout -> MCP timeout error with suggestion."""
     respx.get(f"{PMPROXY_BASE}/series/query").mock(side_effect=httpx.ReadTimeout("Timeout"))

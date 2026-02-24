@@ -84,6 +84,8 @@ class PmproxyClient:
             response = await self._client.get(path, params=params)
         except httpx.ConnectError as exc:
             raise PmproxyConnectionError(str(exc)) from exc
+        except httpx.RemoteProtocolError as exc:
+            raise PmproxyConnectionError(str(exc)) from exc
         except httpx.TimeoutException as exc:
             raise PmproxyTimeoutError(str(exc)) from exc
         self._raise_for_response(response)
