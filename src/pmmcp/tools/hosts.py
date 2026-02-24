@@ -30,10 +30,12 @@ async def _get_hosts_impl(client: PmproxyClient, match: str, limit: int, offset:
     except PmproxyError as exc:
         return _mcp_error("pmproxy error", str(exc), "Check pmproxy logs for details.")
 
-    # Fetch labels for all sources to populate Host.labels
+    # raw is a list of source ID strings: ["<sha1>", ...]
+    source_ids: list[str] = raw
+
+    # Fetch labels for all sources to get hostnames and other metadata
     labels_by_source: dict[str, dict] = {}
-    if raw:
-        source_ids = [entry["source"] for entry in raw]
+    if source_ids:
         try:
             labels_list = await client.series_labels(source_ids)
             for item in labels_list:
@@ -44,14 +46,15 @@ async def _get_hosts_impl(client: PmproxyClient, match: str, limit: int, offset:
             pass  # Labels are optional; proceed without them
 
     hosts = []
-    for entry in raw:
-        source = entry["source"]
-        hostnames = [c for c in entry.get("context", []) if not c.startswith("/")]
+    for source in source_ids:
+        labels = labels_by_source.get(source, {})
+        hostname = labels.get("hostname", "")
+        hostnames = [hostname] if hostname else []
         hosts.append(
             {
                 "source": source,
                 "hostnames": hostnames,
-                "labels": labels_by_source.get(source, {}),
+                "labels": labels,
             }
         )
 

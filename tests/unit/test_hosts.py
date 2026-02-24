@@ -21,18 +21,16 @@ def config():
 @respx.mock
 async def test_get_hosts_returns_paginated_response(config):
     """pcp_get_hosts returns PaginatedResponse[Host] with correct fields."""
+    # /series/sources returns a flat list of source ID strings
     respx.get(f"{PMPROXY_BASE}/series/sources").mock(
-        return_value=httpx.Response(
-            200,
-            json=[{"source": TEST_SOURCE, "context": ["www.acme.com", "acme.internal"]}],
-        )
+        return_value=httpx.Response(200, json=[TEST_SOURCE])
     )
     respx.get(f"{PMPROXY_BASE}/series/labels").mock(
         return_value=httpx.Response(
             200,
             json=[
                 {"series": TEST_SOURCE, "labels": {"hostname": "www.acme.com", "agent": "linux"}}
-            ],  # noqa: E501
+            ],
         )
     )
 
@@ -91,7 +89,8 @@ async def test_get_hosts_glob_match_filter(config):
 @respx.mock
 async def test_get_hosts_pagination(config):
     """pcp_get_hosts respects limit/offset pagination."""
-    sources = [{"source": f"source{i:040d}", "context": [f"host{i}.example.com"]} for i in range(3)]
+    # /series/sources returns flat list of source ID strings
+    sources = [f"source{i:040d}" for i in range(3)]
     respx.get(f"{PMPROXY_BASE}/series/sources").mock(return_value=httpx.Response(200, json=sources))
     respx.get(f"{PMPROXY_BASE}/series/labels").mock(return_value=httpx.Response(200, json=[]))
 
