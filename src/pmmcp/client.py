@@ -93,10 +93,8 @@ class PmproxyClient:
 
     async def series_sources(self, match: str = "") -> list[dict]:
         """GET /series/sources — list monitored hosts."""
-        params: dict = {}
-        if match:
-            params["match"] = match
-        response = await self._get("/series/sources", params or None)
+        params: dict = {"match": match or "*"}
+        response = await self._get("/series/sources", params)
         return response.json()
 
     async def series_query(self, expr: str) -> list[str]:

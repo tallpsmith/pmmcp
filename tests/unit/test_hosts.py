@@ -53,6 +53,24 @@ async def test_get_hosts_returns_paginated_response(config):
 
 
 @respx.mock
+async def test_get_hosts_no_match_sends_wildcard(config):
+    """pcp_get_hosts sends match=* to pmproxy when no match is specified."""
+    route = respx.get(f"{PMPROXY_BASE}/series/sources").mock(
+        return_value=httpx.Response(200, json=[])
+    )
+    respx.get(f"{PMPROXY_BASE}/series/labels").mock(return_value=httpx.Response(200, json=[]))
+
+    client = PmproxyClient(config)
+    try:
+        from pmmcp.tools.hosts import _get_hosts_impl
+
+        await _get_hosts_impl(client, match="", limit=50, offset=0)
+        assert "match=%2A" in str(route.calls[0].request.url) or "match=*" in str(route.calls[0].request.url)
+    finally:
+        await client.close()
+
+
+@respx.mock
 async def test_get_hosts_glob_match_filter(config):
     """pcp_get_hosts passes match glob to pmproxy."""
     route = respx.get(f"{PMPROXY_BASE}/series/sources").mock(
