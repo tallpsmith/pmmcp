@@ -2,7 +2,7 @@
 
 **Feature Branch**: `001-pcp-mcp-service`
 **Created**: 2026-02-20
-**Status**: Draft
+**Status**: Completed
 **Input**: User description: "Create a Claude Code-compatible MCP service and companion subagents that allow Claude to interact with PCP through its pmproxy REST API interfaces and allow AI-analysis of performance problems of running systems."
 
 ## User Scenarios & Testing *(mandatory)*
