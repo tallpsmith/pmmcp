@@ -1,6 +1,9 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.0.0 → 1.1.0 (2026-02-25)
+Amendment: Principle II — added mandatory pre-push sanity check requirement
+
 Version change: [template/unratified] → 1.0.0 (initial ratification)
 
 Principles added (all new):
@@ -61,6 +64,10 @@ Tests are the executable specification of the system's intent. Coverage is not o
 - No feature is considered complete until all tests pass in CI without modification or skip.
 - Performance regression tests MUST be included for any code path with a defined latency SLA.
 - Contract tests MUST be written whenever a public interface changes.
+- Before any `git push` to a remote, the developer MUST run the pre-push sanity check
+  (`/pre-push-sanity` or `scripts/pre-push-sanity.sh`). Lint, format, unit, and integration
+  tests MUST all pass. E2E tests MUST pass if `PMPROXY_URL` is set; if not set, a warning is
+  acceptable but the omission MUST be noted in the PR description.
 
 **Rationale**: Tests provide the safety net that enables confident refactoring, continuous delivery,
 and fearless evolution of the system over time.
@@ -189,4 +196,4 @@ For runtime development guidance and active technology context, see agent files 
 
 ---
 
-**Version**: 1.0.0 | **Ratified**: 2026-02-20 | **Last Amended**: 2026-02-20
+**Version**: 1.1.0 | **Ratified**: 2026-02-20 | **Last Amended**: 2026-02-25

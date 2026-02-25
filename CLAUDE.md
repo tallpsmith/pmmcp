@@ -127,6 +127,21 @@ Suggested groupings when implementing tasks:
 - Docs (README, CLAUDE.md) as their own commit
 
 Use conventional commit prefixes: `feat:`, `test:`, `chore:`, `fix:`, `docs:`, `refactor:`
+
+## Pre-Push Sanity Check
+
+**Mandatory before any `git push`** (required by Constitution v1.1.0, Principle II).
+
+Run either:
+```bash
+scripts/pre-push-sanity.sh
+```
+or invoke the Claude skill:
+```
+/pre-push-sanity
+```
+
+The check runs in order: lint → format → unit+integration tests (≥80% coverage). E2E tests run only if `PMPROXY_URL` is set; if not set, a warning is printed and E2E is skipped — but this MUST be noted in the PR description.
 <!-- MANUAL ADDITIONS END -->
 
 ## Active Technologies
