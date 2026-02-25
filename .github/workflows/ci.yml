@@ -32,7 +32,69 @@ jobs:
         run: >
           uv run pytest -m "not e2e"
           --cov=pmmcp --cov-fail-under=80
+          --cov-report=xml:coverage.xml
           --junitxml=results-unit-integration.xml
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-unit-integration
+          path: |
+            results-unit-integration.xml
+            coverage.xml
+          retention-days: 7
+
+      - name: Generate summary
+        if: always()
+        run: |
+          python3 - <<'EOF'
+          import xml.etree.ElementTree as ET, os, pathlib
+
+          summary = []
+
+          junit = pathlib.Path("results-unit-integration.xml")
+          if junit.exists():
+              tree = ET.parse(junit)
+              root = tree.getroot()
+              suite = root if root.tag == "testsuite" else root.find("testsuite")
+              if suite is not None:
+                  total   = int(suite.get("tests", 0))
+                  failed  = int(suite.get("failures", 0)) + int(suite.get("errors", 0))
+                  skipped = int(suite.get("skipped", 0))
+                  passed  = total - failed - skipped
+                  duration = float(suite.get("time", 0))
+                  summary.append("## Unit + Integration Results")
+                  summary.append("| Phase | Total | ✅ Passed | ❌ Failed | ⏭ Skipped | ⏱ Duration |")
+                  summary.append("|-------|-------|-----------|-----------|-----------|-------------|")
+                  summary.append(f"| Unit+Integration | {total} | {passed} | {failed} | {skipped} | {duration:.1f}s |")
+                  summary.append("")
+
+                  cases = [(float(tc.get("time", 0)), tc.get("classname", ""), tc.get("name", ""))
+                           for tc in root.iter("testcase")]
+                  cases.sort(reverse=True)
+                  if cases:
+                      summary.append("### 10 Slowest Tests")
+                      summary.append("| Test | Duration |")
+                      summary.append("|------|----------|")
+                      for dur, cls, name in cases[:10]:
+                          label = f"{cls}::{name}" if cls else name
+                          summary.append(f"| {label} | {dur:.3f}s |")
+                      summary.append("")
+
+          cov = pathlib.Path("coverage.xml")
+          if cov.exists():
+              tree = ET.parse(cov)
+              root = tree.getroot()
+              rate = float(root.get("line-rate", 0)) * 100
+              summary.append(f"### Coverage: {rate:.1f}%")
+              summary.append("")
+
+          out = os.environ.get("GITHUB_STEP_SUMMARY", "")
+          if out and summary:
+              with open(out, "a") as f:
+                  f.write("\n".join(summary) + "\n")
+          EOF
 
   e2e:
     runs-on: ubuntu-latest
@@ -79,3 +141,54 @@ jobs:
 
       - name: Test (E2E)
         run: uv run pytest -m e2e --junitxml=results-e2e.xml
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-e2e
+          path: results-e2e.xml
+          retention-days: 7
+
+      - name: Generate summary
+        if: always()
+        run: |
+          python3 - <<'EOF'
+          import xml.etree.ElementTree as ET, os, pathlib
+
+          summary = []
+
+          junit = pathlib.Path("results-e2e.xml")
+          if junit.exists():
+              tree = ET.parse(junit)
+              root = tree.getroot()
+              suite = root if root.tag == "testsuite" else root.find("testsuite")
+              if suite is not None:
+                  total   = int(suite.get("tests", 0))
+                  failed  = int(suite.get("failures", 0)) + int(suite.get("errors", 0))
+                  skipped = int(suite.get("skipped", 0))
+                  passed  = total - failed - skipped
+                  duration = float(suite.get("time", 0))
+                  summary.append("## E2E Results")
+                  summary.append("| Phase | Total | ✅ Passed | ❌ Failed | ⏭ Skipped | ⏱ Duration |")
+                  summary.append("|-------|-------|-----------|-----------|-----------|-------------|")
+                  summary.append(f"| E2E | {total} | {passed} | {failed} | {skipped} | {duration:.1f}s |")
+                  summary.append("")
+
+                  cases = [(float(tc.get("time", 0)), tc.get("classname", ""), tc.get("name", ""))
+                           for tc in root.iter("testcase")]
+                  cases.sort(reverse=True)
+                  if cases:
+                      summary.append("### 10 Slowest Tests")
+                      summary.append("| Test | Duration |")
+                      summary.append("|------|----------|")
+                      for dur, cls, name in cases[:10]:
+                          label = f"{cls}::{name}" if cls else name
+                          summary.append(f"| {label} | {dur:.3f}s |")
+                      summary.append("")
+
+          out = os.environ.get("GITHUB_STEP_SUMMARY", "")
+          if out and summary:
+              with open(out, "a") as f:
+                  f.write("\n".join(summary) + "\n")
+          EOF
