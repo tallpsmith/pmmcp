@@ -79,3 +79,9 @@ Suggested groupings when implementing tasks:
 
 Use conventional commit prefixes: `feat:`, `test:`, `chore:`, `fix:`, `docs:`, `refactor:`
 <!-- MANUAL ADDITIONS END -->
+
+## Active Technologies
+- Python 3.11+ + `mcp[cli]` ≥1.26.0 (FastMCP + ClientSession), `anyio` (memory streams), `respx` (already present — mocks httpx for integration tier), `pytest-asyncio` (already present) (002-add-integration-e2e-tests)
+
+## Recent Changes
+- 002-add-integration-e2e-tests: Added Python 3.11+ + `mcp[cli]` ≥1.26.0 (FastMCP + ClientSession), `anyio` (memory streams), `respx` (already present — mocks httpx for integration tier), `pytest-asyncio` (already present)
