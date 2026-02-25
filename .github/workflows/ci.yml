@@ -40,10 +40,11 @@ jobs:
     services:
       pcp:
         image: quay.io/performancecopilot/pcp:latest
+        options: --privileged
         ports:
           - "44322:44322"
         env:
-          PCP_REDIS_HOST: redis-stack:6379
+          KEY_SERVERS: redis-stack:6379
       redis-stack:
         image: redis/redis-stack:latest
         ports:
