@@ -203,7 +203,11 @@ class PmproxyClient:
         except httpx.TimeoutException as exc:
             raise PmproxyTimeoutError(str(exc)) from exc
 
-        if response.status_code == 403:
+        context_expired = response.status_code == 403 or (
+            response.status_code == 400
+            and "unknown context identifier" in response.text.lower()
+        )
+        if context_expired:
             # Context expired — invalidate and retry once
             cache_key = host or "__default__"
             self._contexts.pop(cache_key, None)
