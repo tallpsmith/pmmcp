@@ -19,8 +19,8 @@
 
 **Commit**: `test: add integration + e2e test infrastructure and conftest fixtures` *(shared with Phase 2)*
 
-- [ ] T001 Update `pyproject.toml`: add `integration` and `e2e` entries to `[tool.pytest.ini_options] markers` list; add `asyncio_mode = "auto"` if not already present
-- [ ] T002 [P] Create `docker-compose.yml` at repo root: `performancecopilot/pcp:latest` on port 44322 and `redis/redis-stack:latest` on port 6379; set pmproxy env `PCP_REDIS_HOST=redis-stack:6379` so all nine tools are exercisable locally
+- [X] T001 Update `pyproject.toml`: add `integration` and `e2e` entries to `[tool.pytest.ini_options] markers` list; add `asyncio_mode = "auto"` if not already present
+- [X] T002 [P] Create `docker-compose.yml` at repo root: `performancecopilot/pcp:latest` on port 44322 and `redis/redis-stack:latest` on port 6379; set pmproxy env `PCP_REDIS_HOST=redis-stack:6379` so all nine tools are exercisable locally
 
 ---
 
@@ -32,11 +32,11 @@
 
 **Commit**: `test: add integration + e2e test infrastructure and conftest fixtures` *(shared with Phase 1)*
 
-- [ ] T003 Create `tests/integration/conftest.py`: session-scoped `mcp_server` fixture that injects `PmproxyConfig(url="http://mock-pmproxy:44322", timeout=5.0)` into `pmmcp.server._config` and returns `server_module.mcp`; async per-test `mcp_session` fixture that creates cross-wired `anyio.create_memory_object_stream[SessionMessage | Exception](0)` pairs, starts `mcp._mcp_server.run(server_r, server_w, init_opts, raise_exceptions=True)` in a task group, and yields an initialised `ClientSession`
-- [ ] T004 Add canary integration test to `tests/integration/test_canary.py`: one async test using `mcp_session` that calls `session.list_tools()` and asserts exactly 9 tools are returned — confirms fixture wiring before any tool test is written; mark `@pytest.mark.integration`
-- [ ] T005 [P] Create `tests/e2e/__init__.py` (empty — module marker only)
-- [ ] T006 Create `tests/e2e/conftest.py`: implement `pytest_collection_modifyitems` gating — if item nodeid contains `e2e`: when `SKIP_E2E=1` add `pytest.mark.skip(reason="E2E opt-out: SKIP_E2E=1")`; when `PMPROXY_URL` unset add `pytest.mark.xfail(strict=True, reason="PMPROXY_URL is required for E2E tests. Set SKIP_E2E=1 to explicitly opt out.")`; add async session-scoped `e2e_session` fixture using `mcp.client.stdio.stdio_client(StdioServerParameters(command="uv", args=["run","python","-m","pmmcp"], env=os.environ | {"PMPROXY_URL": PMPROXY_URL}))` that yields an initialised `ClientSession`
-- [ ] T007 Relocate `tests/integration/test_integration.py` to `tests/e2e/test_live.py`: replace `@pytest.mark.skipif(not PMPROXY_URL, ...)` with `@pytest.mark.e2e`; remove all manual skip logic (gating now handled by `tests/e2e/conftest.py`); update any direct `_*_impl()` calls to use the `e2e_session` fixture and `session.call_tool()`; then **delete** the original `tests/integration/test_integration.py`
+- [X] T003 Create `tests/integration/conftest.py`: session-scoped `mcp_server` fixture that injects `PmproxyConfig(url="http://mock-pmproxy:44322", timeout=5.0)` into `pmmcp.server._config` and returns `server_module.mcp`; async per-test `mcp_session` fixture that creates cross-wired `anyio.create_memory_object_stream[SessionMessage | Exception](0)` pairs, starts `mcp._mcp_server.run(server_r, server_w, init_opts, raise_exceptions=True)` in a task group, and yields an initialised `ClientSession`
+- [X] T004 Add canary integration test to `tests/integration/test_canary.py`: one async test using `mcp_session` that calls `session.list_tools()` and asserts exactly 9 tools are returned — confirms fixture wiring before any tool test is written; mark `@pytest.mark.integration`
+- [X] T005 [P] Create `tests/e2e/__init__.py` (empty — module marker only)
+- [X] T006 Create `tests/e2e/conftest.py`: implement `pytest_collection_modifyitems` gating — if item nodeid contains `e2e`: when `SKIP_E2E=1` add `pytest.mark.skip(reason="E2E opt-out: SKIP_E2E=1")`; when `PMPROXY_URL` unset add `pytest.mark.xfail(strict=True, reason="PMPROXY_URL is required for E2E tests. Set SKIP_E2E=1 to explicitly opt out.")`; add async session-scoped `e2e_session` fixture using `mcp.client.stdio.stdio_client(StdioServerParameters(command="uv", args=["run","python","-m","pmmcp"], env=os.environ | {"PMPROXY_URL": PMPROXY_URL}))` that yields an initialised `ClientSession`
+- [X] T007 Relocate `tests/integration/test_integration.py` to `tests/e2e/test_live.py`: replace `@pytest.mark.skipif(not PMPROXY_URL, ...)` with `@pytest.mark.e2e`; remove all manual skip logic (gating now handled by `tests/e2e/conftest.py`); update any direct `_*_impl()` calls to use the `e2e_session` fixture and `session.call_tool()`; then **delete** the original `tests/integration/test_integration.py`
 
 **⏸ PAUSE GATE A**: Push branch. Verify: unit-integration CI job green (lint, format, unit + contract + canary); E2E job xfail-with-diagnostic (no `PMPROXY_URL` in default runner); coverage ≥80%.
 
@@ -52,13 +52,13 @@
 
 > **TDD cycle per test file**: write the test → run it (it fails with "tool not found" or assertion error) → confirm failure is correct → run full suite → confirm green.
 
-- [ ] T008 [P] [US1] Write `tests/integration/test_hosts.py`: `@pytest.mark.integration` async test calling `session.call_tool("pcp_get_hosts", {})` with `respx.mock` patching `/pmapi/context` (200, `{"context":1}`) and `/series/instances` (200, `[{"instance":0,"name":"localhost"}]`); assert `result.isError` is falsy and response text contains `"hosts"` or `"localhost"`
-- [ ] T009 [P] [US1] Write `tests/integration/test_live.py`: `@pytest.mark.integration` async test calling `session.call_tool("pcp_fetch_live", {"metrics":["kernel.all.load"]})` with `respx.mock` patching `/pmapi/context` and `/pmapi/fetch` (200, realistic fetch payload with `values` list); assert non-error response containing metric values
-- [ ] T010 [P] [US1] Write `tests/integration/test_timeseries.py`: two `@pytest.mark.integration` async tests — one for `pcp_fetch_timeseries` (respx mocks for `/series/query` + `/series/values`, assert timeseries data in response) and one for `pcp_query_series` (respx mock for `/series/query`, assert series identifiers in response)
-- [ ] T011 [P] [US1] Write `tests/integration/test_search.py`: `@pytest.mark.integration` async test calling `session.call_tool("pcp_search", {"query":"kernel"})` with `respx.mock` patching `/search/text` (200, `{"results":[{"name":"kernel.all.load","text":"..."}]}`); assert non-error response with `"kernel"` in text
-- [ ] T012 [P] [US1] Write `tests/integration/test_discovery.py`: three `@pytest.mark.integration` async tests — `pcp_discover_metrics` prefix mode (respx mock for `/pmapi/children`, assert namespace list), `pcp_discover_metrics` search mode (respx mock for `/search/text`, assert results), `pcp_get_metric_info` (respx mocks for `/pmapi/metric` + `/pmapi/indom`, assert metadata fields present)
-- [ ] T013 [P] [US1] Write `tests/integration/test_derived.py`: `@pytest.mark.integration` async test calling `session.call_tool("pcp_derive_metric", {"name":"test.derived","expr":"kernel.all.load"})` with `respx.mock` patching `/pmapi/derive` (200 or expected response shape); assert non-error MCP response
-- [ ] T014 [P] [US1] Write `tests/integration/test_comparison.py`: `@pytest.mark.integration` async test calling `session.call_tool("pcp_compare_windows", {"metric":"mem.util.used","baseline_start":"...","comparison_start":"...",...})` with `respx.mock` patching `/series/query` and `/series/values` twice (two time windows); assert non-error response with comparison statistics
+- [X] T008 [P] [US1] Write `tests/integration/test_hosts.py`: `@pytest.mark.integration` async test calling `session.call_tool("pcp_get_hosts", {})` with `respx.mock` patching `/pmapi/context` (200, `{"context":1}`) and `/series/instances` (200, `[{"instance":0,"name":"localhost"}]`); assert `result.isError` is falsy and response text contains `"hosts"` or `"localhost"`
+- [X] T009 [P] [US1] Write `tests/integration/test_live.py`: `@pytest.mark.integration` async test calling `session.call_tool("pcp_fetch_live", {"metrics":["kernel.all.load"]})` with `respx.mock` patching `/pmapi/context` and `/pmapi/fetch` (200, realistic fetch payload with `values` list); assert non-error response containing metric values
+- [X] T010 [P] [US1] Write `tests/integration/test_timeseries.py`: two `@pytest.mark.integration` async tests — one for `pcp_fetch_timeseries` (respx mocks for `/series/query` + `/series/values`, assert timeseries data in response) and one for `pcp_query_series` (respx mock for `/series/query`, assert series identifiers in response)
+- [X] T011 [P] [US1] Write `tests/integration/test_search.py`: `@pytest.mark.integration` async test calling `session.call_tool("pcp_search", {"query":"kernel"})` with `respx.mock` patching `/search/text` (200, `{"results":[{"name":"kernel.all.load","text":"..."}]}`); assert non-error response with `"kernel"` in text
+- [X] T012 [P] [US1] Write `tests/integration/test_discovery.py`: three `@pytest.mark.integration` async tests — `pcp_discover_metrics` prefix mode (respx mock for `/pmapi/children`, assert namespace list), `pcp_discover_metrics` search mode (respx mock for `/search/text`, assert results), `pcp_get_metric_info` (respx mocks for `/pmapi/metric` + `/pmapi/indom`, assert metadata fields present)
+- [X] T013 [P] [US1] Write `tests/integration/test_derived.py`: `@pytest.mark.integration` async test calling `session.call_tool("pcp_derive_metric", {"name":"test.derived","expr":"kernel.all.load"})` with `respx.mock` patching `/pmapi/derive` (200 or expected response shape); assert non-error MCP response
+- [X] T014 [P] [US1] Write `tests/integration/test_comparison.py`: `@pytest.mark.integration` async test calling `session.call_tool("pcp_compare_windows", {"metric":"mem.util.used","baseline_start":"...","comparison_start":"...",...})` with `respx.mock` patching `/series/query` and `/series/values` twice (two time windows); assert non-error response with comparison statistics
 
 **⏸ PAUSE GATE B**: Push branch. Verify: all 7 integration test files pass; integration suite completes under 60 seconds (check CI job timing); coverage ≥80%; each tool appears distinctly in test output.
 
@@ -75,8 +75,8 @@
 
 > **TDD cycle**: bring up docker-compose locally first; write assertion with deliberately wrong expected value to confirm full stack is wired; fix assertion to correct value and watch it go green.
 
-- [ ] T015 [US2] Create `tests/e2e/test_tools.py` with initial 3 `@pytest.mark.e2e` async tests using `e2e_session` fixture: `test_fetch_live` calls `pcp_fetch_live` with `{"metrics":["kernel.all.load"]}` and asserts `len(values) > 0`; `test_get_hosts` calls `pcp_get_hosts` and asserts at least one host returned; `test_fetch_timeseries` calls `pcp_fetch_timeseries` with `{"metrics":["mem.util.used"],"start":"-2m","finish":"now","interval":"10s"}` and asserts data points present — only use FR-007-approved metrics throughout
-- [ ] T016 [US2] Extend `tests/e2e/test_tools.py` with remaining 6 `@pytest.mark.e2e` async tests: `test_query_series` (`pcp_query_series`, assert series IDs returned); `test_search` (`pcp_search` with `{"query":"kernel"}`, asserts RediSearch results — requires redis-stack); `test_discover_metrics_prefix` (`pcp_discover_metrics` prefix mode `{"prefix":"kernel"}`, assert namespace children); `test_discover_metrics_search` (`pcp_discover_metrics` search mode, assert concept results); `test_get_metric_info` (`pcp_get_metric_info` for `kernel.all.load`, assert metadata); `test_compare_windows` (`pcp_compare_windows`, assert delta statistics present)
+- [X] T015 [US2] Create `tests/e2e/test_tools.py` with initial 3 `@pytest.mark.e2e` async tests using `e2e_session` fixture: `test_fetch_live` calls `pcp_fetch_live` with `{"metrics":["kernel.all.load"]}` and asserts `len(values) > 0`; `test_get_hosts` calls `pcp_get_hosts` and asserts at least one host returned; `test_fetch_timeseries` calls `pcp_fetch_timeseries` with `{"metrics":["mem.util.used"],"start":"-2m","finish":"now","interval":"10s"}` and asserts data points present — only use FR-007-approved metrics throughout
+- [X] T016 [US2] Extend `tests/e2e/test_tools.py` with remaining 6 `@pytest.mark.e2e` async tests: `test_query_series` (`pcp_query_series`, assert series IDs returned); `test_search` (`pcp_search` with `{"query":"kernel"}`, asserts RediSearch results — requires redis-stack); `test_discover_metrics_prefix` (`pcp_discover_metrics` prefix mode `{"prefix":"kernel"}`, assert namespace children); `test_discover_metrics_search` (`pcp_discover_metrics` search mode, assert concept results); `test_get_metric_info` (`pcp_get_metric_info` for `kernel.all.load`, assert metadata); `test_compare_windows` (`pcp_compare_windows`, assert delta statistics present)
 
 **⏸ PAUSE GATE C**: Push branch. Verify: unit-integration job still green; E2E job: PCP + redis-stack spin up; initial 3 tools return real data; job passes; E2E failure correctly blocks PR merge.
 
@@ -90,7 +90,7 @@
 
 **Commit**: included in `test: add E2E subprocess harness and initial tool coverage with GHA service containers`
 
-- [ ] T017 [US3] Update `.github/workflows/ci.yml`: (1) rename/update existing job to `unit-integration` — add `-m "not e2e"` filter to pytest command and `--junitxml=results-unit-integration.xml`; (2) add `e2e` job with `services: pcp: {image: performancecopilot/pcp:latest, ports: ["44322:44322"]}` and `redis-stack: {image: redis/redis-stack:latest, ports: ["6379:6379"]}`, `env: PMPROXY_URL: http://localhost:44322`, a readiness step (`for i in $(seq 1 30); do curl -sf http://localhost:44322/pmapi/context?hostspec=localhost && break; sleep 2; done`), and `uv run pytest -m e2e --junitxml=results-e2e.xml`
+- [X] T017 [US3] Update `.github/workflows/ci.yml`: (1) rename/update existing job to `unit-integration` — add `-m "not e2e"` filter to pytest command and `--junitxml=results-unit-integration.xml`; (2) add `e2e` job with `services: pcp: {image: performancecopilot/pcp:latest, ports: ["44322:44322"]}` and `redis-stack: {image: redis/redis-stack:latest, ports: ["6379:6379"]}`, `env: PMPROXY_URL: http://localhost:44322`, a readiness step (`for i in $(seq 1 30); do curl -sf http://localhost:44322/pmapi/context?hostspec=localhost && break; sleep 2; done`), and `uv run pytest -m e2e --junitxml=results-e2e.xml`
 
 **⏸ PAUSE GATE D (Final)**: Push branch. Verify: both CI jobs green; three test tiers (unit, integration, E2E) reported separately; SC-001 through SC-006 all satisfied; PR ready to merge to `main`.
 
@@ -98,8 +98,8 @@
 
 ## Final Phase: Polish & Cross-Cutting Concerns
 
-- [ ] T018 [P] Run `uv run ruff check tests/integration/ tests/e2e/` and `uv run ruff format --check tests/integration/ tests/e2e/` — fix any violations in new test files
-- [ ] T019 Confirm coverage gate: `uv run pytest -m "not e2e" --cov=pmmcp --cov-fail-under=80 --cov-report=term-missing` passes without modification to production code
+- [X] T018 [P] Run `uv run ruff check tests/integration/ tests/e2e/` and `uv run ruff format --check tests/integration/ tests/e2e/` — fix any violations in new test files
+- [X] T019 Confirm coverage gate: `uv run pytest -m "not e2e" --cov=pmmcp --cov-fail-under=80 --cov-report=term-missing` passes without modification to production code
 
 ---
 
