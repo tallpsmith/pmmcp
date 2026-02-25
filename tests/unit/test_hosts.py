@@ -63,8 +63,7 @@ async def test_get_hosts_no_match_sends_wildcard(config):
         from pmmcp.tools.hosts import _get_hosts_impl
 
         await _get_hosts_impl(client, match="", limit=50, offset=0)
-        url = str(route.calls[0].request.url)
-        assert "match=%2A" in url or "match=*" in url
+        assert "match=%2A" in str(route.calls[0].request.url) or "match=*" in str(route.calls[0].request.url)
     finally:
         await client.close()
 
