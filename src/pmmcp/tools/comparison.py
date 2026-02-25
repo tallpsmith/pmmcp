@@ -7,6 +7,7 @@ import math
 
 from pmmcp.client import PmproxyClient, PmproxyConnectionError, PmproxyError, PmproxyTimeoutError
 from pmmcp.server import get_client, mcp
+from pmmcp.tools.timeseries import _expand_time_units
 from pmmcp.utils import resolve_interval
 
 logger = logging.getLogger(__name__)
@@ -67,7 +68,11 @@ async def _fetch_window(
 
     try:
         raw_values = await client.series_values(
-            series=series_ids, start=start, finish=end, interval=interval, samples=limit
+            series=series_ids,
+            start=_expand_time_units(start),
+            finish=_expand_time_units(end),
+            interval=interval,
+            samples=limit,
         )
     except (PmproxyConnectionError, PmproxyTimeoutError, PmproxyError):
         raise

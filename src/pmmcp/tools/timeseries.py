@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 
 from pmmcp.client import PmproxyClient, PmproxyConnectionError, PmproxyError, PmproxyTimeoutError
 from pmmcp.server import get_client, mcp
@@ -10,6 +11,24 @@ from pmmcp.utils import natural_samples as compute_natural_samples
 from pmmcp.utils import resolve_interval
 
 logger = logging.getLogger(__name__)
+
+
+_SHORT_UNIT_MAP = {"s": "seconds", "m": "minutes", "h": "hours", "d": "days", "w": "weeks"}
+
+
+def _expand_time_units(expr: str) -> str:
+    """Expand abbreviated time units to full forms pmproxy's series API accepts.
+
+    Converts e.g. '-2m' to '-2minutes', '-1h' to '-1hours'.
+    Leaves 'now', full-form expressions, and ISO timestamps unchanged.
+    """
+    if expr in ("now", ""):
+        return expr
+    match = re.fullmatch(r"(-\d+)\s*([smhdw])$", expr.strip())
+    if match:
+        n, unit = match.group(1), match.group(2)
+        return f"{n}{_SHORT_UNIT_MAP[unit]}"
+    return expr
 
 
 def _mcp_error(category: str, description: str, suggestion: str) -> dict:
@@ -60,8 +79,8 @@ async def _resolve_series_and_fetch(
     try:
         values = await client.series_values(
             series=series_ids,
-            start=start,
-            finish=end,
+            start=_expand_time_units(start),
+            finish=_expand_time_units(end),
             interval=resolved,
             samples=effective_samples,
         )
