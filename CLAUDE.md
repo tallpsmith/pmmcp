@@ -66,6 +66,25 @@ Coverage gate: ≥80% required (enforced in CI via `--cov-fail-under=80`).
 - **PMAPI context cache**: lives in `PmproxyClient`; retries on HTTP 403 (expired context).
 
 <!-- MANUAL ADDITIONS START -->
+## Container Tooling
+
+**Podman is the preferred container runtime** — not Docker/Docker Desktop. This aligns with the PCP maintainers' tooling preferences.
+
+- Use `podman compose` (or `podman-compose`) instead of `docker compose`
+- The compose file is `docker-compose.yml` (filename kept for compatibility); it works with both
+- PCP image: `quay.io/performancecopilot/pcp:latest` (hosted on Quay, not Docker Hub)
+
+```bash
+# Run E2E services locally
+podman compose up -d
+
+# Run E2E tests
+PMPROXY_URL=http://localhost:44322 uv run pytest -m e2e
+
+# Tear down
+podman compose down
+```
+
 ## Commit Discipline
 
 Commit in small, logical chunks — one concern per commit. Do **not** bundle unrelated changes.
