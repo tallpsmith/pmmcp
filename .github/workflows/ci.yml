@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       pcp:
-        image: performancecopilot/pcp:latest
+        image: quay.io/performancecopilot/pcp:latest
         ports:
           - "44322:44322"
       redis-stack:
