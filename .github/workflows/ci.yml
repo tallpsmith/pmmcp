@@ -5,7 +5,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  unit-integration:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -28,5 +28,43 @@ jobs:
       - name: Format check
         run: uv run ruff format --check src/ tests/
 
-      - name: Test
-        run: uv run pytest --cov=pmmcp --cov-fail-under=80
+      - name: Test (unit + integration)
+        run: >
+          uv run pytest -m "not e2e"
+          --cov=pmmcp --cov-fail-under=80
+          --junitxml=results-unit-integration.xml
+
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      pcp:
+        image: performancecopilot/pcp:latest
+        ports:
+          - "44322:44322"
+      redis-stack:
+        image: redis/redis-stack:latest
+        ports:
+          - "6379:6379"
+    env:
+      PMPROXY_URL: http://localhost:44322
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Wait for pmproxy
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:44322/pmapi/context?hostspec=localhost && break
+            sleep 2
+          done
+
+      - name: Test (E2E)
+        run: uv run pytest -m e2e --junitxml=results-e2e.xml
