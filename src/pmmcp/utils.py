@@ -77,9 +77,10 @@ def resolve_interval(start: str, end: str, interval: str) -> str:
 
     If interval is not 'auto', returns it unchanged.
 
-    Mapping (per research.md Decision 8):
+    Mapping:
       <= 1 hour   -> "15s"
-      <= 24 hours -> "5min"
+      <= 6 hours  -> "5min"
+      <= 24 hours -> "15min"
       <= 7 days   -> "1hour"
       > 7 days    -> "6hour"
     """
@@ -94,8 +95,10 @@ def resolve_interval(start: str, end: str, interval: str) -> str:
 
     if duration <= 3600:
         return "15s"
-    elif duration <= 86400:
+    elif duration <= 21600:
         return "5min"
+    elif duration <= 86400:
+        return "15min"
     elif duration <= 604800:
         return "1hour"
     else:

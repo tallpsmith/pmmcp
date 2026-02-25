@@ -22,10 +22,14 @@ class TestResolveInterval:
         # Exactly 1 hour (3600s boundary)
         assert resolve_interval("-1hour", "now", "auto") == "15s"
 
-    def test_auto_le_24_hours(self):
+    def test_auto_le_6_hours(self):
         assert resolve_interval("-2hours", "now", "auto") == "5min"
-        assert resolve_interval("-12hours", "now", "auto") == "5min"
-        assert resolve_interval("-24hours", "now", "auto") == "5min"
+        assert resolve_interval("-6hours", "now", "auto") == "5min"
+
+    def test_auto_le_24_hours(self):
+        assert resolve_interval("-7hours", "now", "auto") == "15min"
+        assert resolve_interval("-12hours", "now", "auto") == "15min"
+        assert resolve_interval("-24hours", "now", "auto") == "15min"
 
     def test_auto_le_7_days(self):
         assert resolve_interval("-2days", "now", "auto") == "1hour"
@@ -38,12 +42,18 @@ class TestResolveInterval:
     def test_boundary_3600s(self):
         # 3600s exactly -> "15s"
         assert resolve_interval("-1hour", "now", "auto") == "15s"
-        # 3601s -> "5min" (just over 1 hour)
+        # just over 1 hour -> "5min"
         assert resolve_interval("-61min", "now", "auto") == "5min"
 
+    def test_boundary_21600s(self):
+        # 6 hours exactly -> "5min"
+        assert resolve_interval("-6hours", "now", "auto") == "5min"
+        # just over 6 hours -> "15min"
+        assert resolve_interval("-361min", "now", "auto") == "15min"
+
     def test_boundary_86400s(self):
-        # 24 hours exactly -> "5min"
-        assert resolve_interval("-24hours", "now", "auto") == "5min"
+        # 24 hours exactly -> "15min"
+        assert resolve_interval("-24hours", "now", "auto") == "15min"
         # 25 hours -> "1hour"
         assert resolve_interval("-25hours", "now", "auto") == "1hour"
 
