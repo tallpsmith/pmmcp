@@ -85,6 +85,36 @@ PMPROXY_URL=http://localhost:44322 uv run pytest -m e2e
 podman compose down
 ```
 
+## E2E Container Gotchas
+
+- PCP image **requires `privileged: true`** — it uses systemd as PID 1; without it the container exits immediately (code 255)
+- Redis host env var is **`KEY_SERVERS: redis-stack:6379`** (NOT `PCP_REDIS_HOST`) — that's what the container entrypoint reads; wrong value causes pmproxy to hang on all series/search calls
+
+## pmproxy Series API Time Formats
+
+- `/series/values` **rejects abbreviated units** like `-2m`, `-1h` — causes a Content-Length mismatch → `RemoteProtocolError`
+- Use full forms: `-2minutes`, `-1hours`, `-7days`
+- `_expand_time_units()` in `tools/timeseries.py` handles this expansion; **always call it** before passing `start`/`finish` to `client.series_values()`
+
+## FastMCP List Return Behaviour
+
+- When a tool returns a Python `list`, FastMCP serialises **each element as a separate `TextContent` block** — `result.content` is a list of blocks, not one block containing the whole list
+- Correct iteration: `comparisons = [json.loads(c.text) for c in result.content]`
+- Wrong: `json.loads(result.content[0].text)` — that gives you the first element only
+
+## pytest-asyncio Session Fixture Teardown
+
+- Need **both** settings in `pyproject.toml` for session-scoped async fixtures to work without cascade timeouts:
+  ```toml
+  asyncio_default_fixture_loop_scope = "session"
+  asyncio_default_test_loop_scope = "session"
+  ```
+- Wrap session fixture body in `try/except RuntimeError: pass` — anyio cancel-scope teardown fires in a new task and raises a benign RuntimeError
+
+## PMAPI Context Cache
+
+- `PmproxyClient` caches PMAPI contexts; retries on **both HTTP 403 and HTTP 400 "unknown context identifier"** — the 400 case surfaces after container restarts or long idle periods
+
 ## Commit Discipline
 
 Commit in small, logical chunks — one concern per commit. Do **not** bundle unrelated changes.
