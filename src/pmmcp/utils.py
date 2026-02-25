@@ -20,7 +20,7 @@ def parse_time_expr(expr: str, _now: datetime | None = None) -> datetime:
 
     # PCP relative expression: e.g. "-6hours", "-30min", "-7days"
     match = re.fullmatch(
-        r"-(\d+)\s*(s|sec|secs|second|seconds|min|mins|minute|minutes|h|hour|hours|d|day|days|w|week|weeks)",
+        r"-(\d+)\s*(s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hour|hours|d|day|days|w|week|weeks)",
         expr.strip(),
     )
     if match:
@@ -28,7 +28,7 @@ def parse_time_expr(expr: str, _now: datetime | None = None) -> datetime:
         unit = match.group(2)
         if unit in ("s", "sec", "secs", "second", "seconds"):
             return now - timedelta(seconds=amount)
-        elif unit in ("min", "mins", "minute", "minutes"):
+        elif unit in ("m", "min", "mins", "minute", "minutes"):
             return now - timedelta(minutes=amount)
         elif unit in ("h", "hour", "hours"):
             return now - timedelta(hours=amount)
