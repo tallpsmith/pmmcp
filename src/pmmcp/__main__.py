@@ -13,13 +13,13 @@ def main() -> None:
     )
     parser.add_argument(
         "--pmproxy-url",
-        required=True,
-        help="pmproxy base URL (e.g., http://localhost:44322)",
+        default=None,
+        help="pmproxy base URL (e.g., http://localhost:44322); overrides PMPROXY_URL env var",
     )
     parser.add_argument(
         "--timeout",
         type=float,
-        default=30.0,
+        default=None,
         help="HTTP request timeout in seconds (default: 30.0)",
     )
     args = parser.parse_args()
@@ -27,7 +27,12 @@ def main() -> None:
     import pmmcp.server as srv
     from pmmcp.config import PmproxyConfig
 
-    srv._config = PmproxyConfig(url=args.pmproxy_url, timeout=args.timeout)
+    kwargs: dict = {}
+    if args.pmproxy_url is not None:
+        kwargs["url"] = args.pmproxy_url
+    if args.timeout is not None:
+        kwargs["timeout"] = args.timeout
+    srv._config = PmproxyConfig(**kwargs)
     srv.mcp.run(transport="stdio")
 
 
