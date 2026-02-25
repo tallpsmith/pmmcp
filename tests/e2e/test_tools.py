@@ -14,6 +14,8 @@ import json
 
 import pytest
 
+pytestmark = pytest.mark.asyncio(loop_scope="session")
+
 # ---------------------------------------------------------------------------
 # T015 — Initial 3 tools (full-stack wiring proof)
 # ---------------------------------------------------------------------------

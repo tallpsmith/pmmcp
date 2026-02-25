@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sys
 
 import pytest
 from mcp.client.session import ClientSession
@@ -38,8 +39,8 @@ async def e2e_session():
         env["PMPROXY_URL"] = PMPROXY_URL
 
     params = StdioServerParameters(
-        command="uv",
-        args=["run", "python", "-m", "pmmcp"],
+        command=sys.executable,
+        args=["-m", "pmmcp"],
         env=env,
     )
     async with stdio_client(params) as (r, w):

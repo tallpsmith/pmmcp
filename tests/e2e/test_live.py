@@ -13,6 +13,8 @@ import time
 
 import pytest
 
+pytestmark = pytest.mark.asyncio(loop_scope="session")
+
 
 @pytest.mark.e2e
 async def test_host_discovery_performance(e2e_session):
