@@ -1,0 +1,14 @@
+services:
+  pcp:
+    image: performancecopilot/pcp:latest
+    ports:
+      - "44322:44322"
+    environment:
+      PCP_REDIS_HOST: redis-stack:6379
+    depends_on:
+      - redis-stack
+
+  redis-stack:
+    image: redis/redis-stack:latest
+    ports:
+      - "6379:6379"

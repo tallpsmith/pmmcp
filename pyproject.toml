@@ -36,3 +36,7 @@ select = ["E", "F", "I", "UP"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+    "integration: in-process MCP protocol tests (mocked pmproxy)",
+    "e2e: subprocess full-stack tests (requires PMPROXY_URL or SKIP_E2E=1)",
+]
