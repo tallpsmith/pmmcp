@@ -28,19 +28,9 @@ pmmcp gives AI agents 9 MCP tools for performance investigation:
 
 ## Installation
 
-### Option A: Docker (recommended)
+> **Note:** Docker image and PyPI package publishing are not yet available. Install from source for now.
 
-```bash
-docker pull ghcr.io/<org>/pmmcp
-```
-
-### Option B: From PyPI
-
-```bash
-uv tool install pmmcp
-```
-
-### Option C: From Source
+### From Source
 
 ```bash
 git clone <repository-url>
@@ -51,32 +41,6 @@ uv sync
 ## Configure Claude Code
 
 Add pmmcp to `.mcp.json` in your project root (or `~/.claude/mcp.json` for global config).
-
-### Docker
-
-```json
-{
-  "mcpServers": {
-    "pmmcp": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "ghcr.io/<org>/pmmcp", "--pmproxy-url", "http://your-pmproxy-host:44322"]
-    }
-  }
-}
-```
-
-### uvx (no install needed)
-
-```json
-{
-  "mcpServers": {
-    "pmmcp": {
-      "command": "uvx",
-      "args": ["pmmcp", "--pmproxy-url", "http://your-pmproxy-host:44322"]
-    }
-  }
-}
-```
 
 ### Python (installed from source)
 
