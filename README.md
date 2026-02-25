@@ -37,7 +37,7 @@ docker pull ghcr.io/<org>/pmmcp
 ### Option B: From PyPI
 
 ```bash
-pip install pmmcp
+uv tool install pmmcp
 ```
 
 ### Option C: From Source
@@ -45,7 +45,7 @@ pip install pmmcp
 ```bash
 git clone <repository-url>
 cd pmmcp
-pip install -e .
+uv sync
 ```
 
 ## Configure Claude Code
@@ -131,26 +131,26 @@ Give me a summary of all services over the past 7 days, highlighting anything th
 ```bash
 git clone <repository-url>
 cd pmmcp
-pip install -e ".[dev]"
+uv sync --extra dev
 
 # Run tests
-pytest
+uv run pytest
 
 # Run with coverage
-pytest --cov=pmmcp --cov-report=term-missing
+uv run pytest --cov=pmmcp --cov-report=term-missing
 
 # Lint
-ruff check src/ tests/
+uv run ruff check src/ tests/
 
 # Format
-ruff format src/ tests/
+uv run ruff format src/ tests/
 ```
 
 ### Running against a real pmproxy
 
 ```bash
 export PMPROXY_URL=http://your-pmproxy-host:44322
-pytest tests/integration/
+uv run pytest tests/integration/
 ```
 
 Integration tests are skipped automatically when `PMPROXY_URL` is not set.
