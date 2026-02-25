@@ -34,6 +34,26 @@ For each host, collect these KPIs over the report period:
 | Network | `network.interface.out.bytes` | Kbytes/s | Interface-dependent |
 | Load | `kernel.all.load` (1-minute instance) | processes | >2x ncpu |
 
+## Presentation Standards
+
+All values in the report must be human-readable. A reader should never need to mentally convert units.
+
+### CPU Utilisation
+- Always show as **%**. `kernel.all.cpu.*` are ms counters; after rate conversion:
+  `% = rate_ms_per_sec / (hinv.ncpu × 10)`
+
+### Memory and Storage Sizes
+`mem.util.*` is in Kbytes. Normalise: KB → MB → GB → TB (÷1024 at each boundary). The KPI table column should say `Mem%` but the detailed breakdown should show absolute values normalised (e.g. `6.2 GB / 8 GB`).
+
+### Network Bandwidth
+Normalise bytes/s or Kbytes/s to `KB/s`, `MB/s`, or `Gbps`. The KPI table column is already labelled `Net (Mbps)` — ensure values are converted to Mbps accordingly.
+
+### Disk Throughput
+`disk.dev.*_bytes` → show as `MB/s` after rate conversion. `disk.dev.avactive` stays as `ms`.
+
+### General Rule
+Prefer 1–3 significant figures. `6.2 GB` is better than `6,291,456 KB`.
+
 ## Hierarchical Sampling for Reports
 
 - **Weekly report**: Use `interval="1hour"` for the full period

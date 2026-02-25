@@ -60,6 +60,38 @@ Always investigate in this order:
 - `proc.nprocs` — Total number of processes
 - `hotproc.*` — High-resource processes (requires hotproc PMDA)
 
+## Presentation Standards
+
+Always report values in human-readable units. Never present raw counter accumulations or awkward magnitudes.
+
+### CPU Utilisation
+- Express as **percentage (0–100%)**, never raw milliseconds.
+- `kernel.all.cpu.*` are counters in ms. After rate conversion (via `pcp_derive_metric`):
+  `% = rate_ms_per_sec / (hinv.ncpu × 10)`
+  Fetch `hinv.ncpu` once per host and use it as the denominator throughout.
+- Show as `42%`, not `4,200 ms` or `420,000 ms`.
+
+### Memory and Storage Sizes
+PCP memory metrics (`mem.util.*`) are in **Kbytes**. Normalise to the largest sensible unit:
+- < 1 MB → show as `X KB`
+- < 1 GB → show as `X.X MB`
+- < 1 TB → show as `X.X GB`
+- ≥ 1 TB → show as `X.X TB`
+
+### Network Bandwidth
+`network.interface.*.bytes` are counters in bytes. After rate conversion, normalise:
+- Show as `KB/s`, `MB/s`, or `Gbps` — whichever avoids numbers >1000.
+
+### Disk Throughput
+- `disk.dev.read_bytes` / `disk.dev.write_bytes`: counters in Kbytes — normalise to `MB/s` after rate conversion.
+- `disk.dev.avactive`: already in **milliseconds** (I/O service time) — `ms` is the correct unit here.
+
+### Load Average
+Report relative to CPU count: e.g. `load 2.4 (30% saturated on 8-core host)`.
+
+### General Rule
+If a value would print as `1,048,576` or `0.000042`, convert it. Prefer 1–3 significant figures.
+
 ## Counter vs Instant Semantics
 
 - **Counters** (semantics=counter): Accumulate over time. You must rate-convert: `delta(value) / interval`. Use `pcp_derive_metric` to create rate metrics (e.g., `derived.disk.iops = rate(disk.dev.read)`).

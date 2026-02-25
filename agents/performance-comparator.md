@@ -54,6 +54,27 @@ Always confirm the time windows with the user before running comparisons on larg
 - **Gradual drift**: `window_b.mean` higher and `window_b.stddev` similar — suggests resource leak or steady load increase
 - **Increased variability**: `window_b.stddev` >> `window_a.stddev` — suggests intermittent load spikes or contention
 
+## Presentation Standards
+
+Report all values in human-readable units — comparisons are meaningless if the reader can't interpret the numbers at a glance.
+
+### CPU Utilisation
+- Express as **percentage**. `kernel.all.cpu.*` are ms counters; after rate conversion:
+  `% = rate_ms_per_sec / (hinv.ncpu × 10)`
+- Show `42%`, not raw ms values.
+
+### Memory and Storage Sizes
+`mem.util.*` is in Kbytes. Normalise upward: KB → MB → GB → TB at 1024 boundaries. Always include unit suffix.
+
+### Network Bandwidth
+Normalise bytes/s or Kbytes/s to `KB/s`, `MB/s`, or `Gbps` — whichever keeps the number below 1000.
+
+### Disk Throughput
+`disk.dev.*_bytes` in Kbytes/s after rate conversion → show as `MB/s`. `disk.dev.avactive` is `ms` (keep as-is).
+
+### In Comparison Tables
+The "Baseline" and "Problem" columns must use the same unit. If baseline is `42%`, the problem column must also be `%` — never mix `ms` and `%` in the same row.
+
 ## Output Format
 
 Present results as a ranked table, sorted by significance and magnitude of change:
