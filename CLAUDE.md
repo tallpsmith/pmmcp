@@ -64,6 +64,18 @@ Coverage gate: ≥80% required (enforced in CI via `--cov-fail-under=80`).
 - **PMAPI context cache**: lives in `PmproxyClient`; retries on HTTP 403 (expired context).
 
 <!-- MANUAL ADDITIONS START -->
+## Linting — MANDATORY AFTER EVERY CODE CHANGE
+
+**BLOCKING REQUIREMENT: After any edit to `src/` or `tests/`, you MUST run:**
+
+```bash
+.venv/bin/ruff check src/ tests/
+```
+
+The venv is not on `$PATH` in Claude Code sessions — always invoke via `.venv/bin/ruff`.
+Fix all reported violations before committing. No exceptions: CI will catch it and the
+embarrassment just isn't worth it.
+
 ## Commit Discipline
 
 Commit in small, logical chunks — one concern per commit. Do **not** bundle unrelated changes.

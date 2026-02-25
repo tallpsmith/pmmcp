@@ -65,7 +65,9 @@ def interval_to_seconds(interval: str) -> float:
 def natural_samples(start: str, end: str, resolved_interval: str) -> int:
     """Compute how many samples naturally fit in the window given the interval."""
     ref = datetime.now(tz=UTC)
-    window_secs = (parse_time_expr(end, _now=ref) - parse_time_expr(start, _now=ref)).total_seconds()
+    start_dt = parse_time_expr(start, _now=ref)
+    end_dt = parse_time_expr(end, _now=ref)
+    window_secs = (end_dt - start_dt).total_seconds()
     interval_secs = interval_to_seconds(resolved_interval)
     return max(1, math.ceil(window_secs / interval_secs))
 
