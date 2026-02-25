@@ -204,8 +204,7 @@ class PmproxyClient:
             raise PmproxyTimeoutError(str(exc)) from exc
 
         context_expired = response.status_code == 403 or (
-            response.status_code == 400
-            and "unknown context identifier" in response.text.lower()
+            response.status_code == 400 and "unknown context identifier" in response.text.lower()
         )
         if context_expired:
             # Context expired — invalidate and retry once
