@@ -35,7 +35,7 @@ async def test_live_fetch_performance(e2e_session):
     start = time.monotonic()
     result = await e2e_session.call_tool(
         "pcp_fetch_live",
-        {"metrics": ["kernel.all.load"]},
+        {"names": ["kernel.all.load"]},
     )
     elapsed = time.monotonic() - start
 
@@ -90,8 +90,9 @@ async def test_two_window_comparison(e2e_session):
         },
     )
     assert not result.isError, f"Got MCP error: {result}"
-    data = json.loads(result.content[0].text)
-    assert isinstance(data, list), f"Expected list, got: {type(data)}"
+    # FastMCP serialises each list element as a separate TextContent block
+    comparisons = [json.loads(c.text) for c in result.content]
+    assert len(comparisons) > 0, "Expected at least one comparison result"
 
 
 @pytest.mark.e2e
@@ -104,6 +105,7 @@ async def test_derived_metric_creation(e2e_session):
             "expr": "kernel.all.load / hinv.ncpu",
         },
     )
-    # Accept either success or failure (metric may already exist)
-    data = json.loads(result.content[0].text)
-    assert "success" in data or result.isError
+    # Accept either success or an MCP error (metric may already exist)
+    if not result.isError:
+        data = json.loads(result.content[0].text)
+        assert "success" in data

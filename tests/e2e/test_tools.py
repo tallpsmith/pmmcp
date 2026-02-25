@@ -127,5 +127,6 @@ async def test_compare_windows(e2e_session):
         },
     )
     assert not result.isError, f"MCP error: {result.content[0].text}"
-    data = json.loads(result.content[0].text)
-    assert isinstance(data, list)
+    # FastMCP serialises each list element as a separate TextContent block
+    comparisons = [json.loads(c.text) for c in result.content]
+    assert len(comparisons) > 0, "Expected at least one comparison result"
