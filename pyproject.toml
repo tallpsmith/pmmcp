@@ -18,6 +18,7 @@ dependencies = [
 dev = [
     "pytest",
     "pytest-asyncio",
+    "pytest-timeout",
     "respx",
     "ruff",
     "pytest-cov",
@@ -35,6 +36,8 @@ select = ["E", "F", "I", "UP"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+timeout = 20
 testpaths = ["tests"]
 markers = [
     "integration: in-process MCP protocol tests (mocked pmproxy)",
