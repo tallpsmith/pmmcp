@@ -13,4 +13,9 @@ COPY --from=build /usr/local/lib/python3.11/site-packages /usr/local/lib/python3
 COPY --from=build /usr/local/bin/pmmcp /usr/local/bin/pmmcp
 COPY src/ src/
 
-CMD ["python", "-m", "pmmcp"]
+# Lock in the Python invocation → args from podman run append to it
+ENTRYPOINT ["python", "-m", "pmmcp"]
+
+# Optional: default flags if you want any when no args are passed
+# (usually leave as empty list for pure CLI tool)
+CMD []
