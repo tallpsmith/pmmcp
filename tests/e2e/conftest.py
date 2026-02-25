@@ -43,7 +43,14 @@ async def e2e_session():
         args=["-m", "pmmcp"],
         env=env,
     )
-    async with stdio_client(params) as (r, w):
-        async with ClientSession(r, w) as session:
-            await session.initialize()
-            yield session
+    try:
+        async with stdio_client(params) as (r, w):
+            async with ClientSession(r, w) as session:
+                await session.initialize()
+                yield session
+    except RuntimeError:
+        # pytest-asyncio tears down session fixtures in a different asyncio task
+        # than the one anyio used to enter its cancel scopes, producing a benign
+        # "Attempted to exit cancel scope in a different task" RuntimeError.
+        # All tests have already run at this point; suppress and move on.
+        pass
