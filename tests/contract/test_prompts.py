@@ -127,3 +127,44 @@ def test_compare_periods_returns_messages():
     assert result.messages, "Expected at least one message"
     first = result.messages[0]
     assert first.content.text, "First message content must be non-empty"
+
+
+# ---------------------------------------------------------------------------
+# fleet_health_check (T019)
+# ---------------------------------------------------------------------------
+
+
+def test_fleet_health_check_registered():
+    """fleet_health_check prompt is registered with the MCP server."""
+    prompts = {p.name for p in srv.mcp._prompt_manager.list_prompts()}
+    assert "fleet_health_check" in prompts
+
+
+def test_fleet_health_check_schema():
+    """fleet_health_check has correct optional argument schema (all optional)."""
+    prompts = {p.name: p for p in srv.mcp._prompt_manager.list_prompts()}
+    p = prompts["fleet_health_check"]
+    args = {a.name: a for a in (p.arguments or [])}
+
+    for optional_arg in ("timerange", "subsystems", "detail_level"):
+        assert optional_arg in args, f"{optional_arg} argument missing"
+        assert args[optional_arg].required is False
+
+
+def test_fleet_health_check_returns_messages():
+    """fleet_health_check returns a non-empty, well-formed message list."""
+    result = asyncio.run(srv.mcp.get_prompt("fleet_health_check", {}))
+    assert result.messages, "Expected at least one message"
+    first = result.messages[0]
+    assert first.content.text, "First message content must be non-empty"
+
+
+def test_all_4_prompts_registered():
+    """All four prompts are registered with the MCP server (SC-001)."""
+    prompts = {p.name for p in srv.mcp._prompt_manager.list_prompts()}
+    assert {
+        "investigate_subsystem",
+        "compare_periods",
+        "fleet_health_check",
+        "incident_triage",
+    } <= prompts
