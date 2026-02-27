@@ -1,6 +1,9 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.1.0 → 1.2.0 (2026-02-27)
+Amendment: Principle II — added story-scoped TDD decomposition requirement
+
 Version change: 1.0.0 → 1.1.0 (2026-02-25)
 Amendment: Principle II — added mandatory pre-push sanity check requirement
 
@@ -58,6 +61,7 @@ reduces cognitive overhead for the entire team.
 Tests are the executable specification of the system's intent. Coverage is not optional.
 
 - The TDD cycle MUST be followed: write failing test → implement → refactor (Red-Green-Refactor).
+- Feature work MUST be decomposed story-by-story. Each user story or task MUST complete a full Red-Green-Refactor cycle before the next begins: (1) write failing tests and commit them, (2) implement to pass, (3) refactor, (4) run pre-push sanity locally, (5) commit and push. No story's implementation MUST be started before its tests are written and confirmed failing.
 - Unit test coverage MUST NOT drop below 80% on any merged feature branch.
 - Integration tests MUST cover all public API contracts and inter-service communication boundaries.
 - Unit tests MUST be isolated and repeatable; all external I/O MUST be mocked or stubbed.
@@ -196,4 +200,4 @@ For runtime development guidance and active technology context, see agent files 
 
 ---
 
-**Version**: 1.1.0 | **Ratified**: 2026-02-20 | **Last Amended**: 2026-02-25
+**Version**: 1.2.0 | **Ratified**: 2026-02-20 | **Last Amended**: 2026-02-27
