@@ -90,6 +90,61 @@ Compare this week's performance to last week for all hosts.
 Give me a summary of all services over the past 7 days, highlighting anything that's degraded.
 ```
 
+## Try It Out Locally
+
+No PCP infrastructure? No problem — the bundled compose stack spins up a fully functional
+PCP + Redis environment in under a minute.
+
+### 1. Start the test harness
+
+```bash
+docker compose up -d
+```
+
+This starts:
+- `quay.io/performancecopilot/pcp` — pmcd + pmproxy (port 44322)
+- `redis/redis-stack` — time-series backend for historical queries (port 6379)
+
+Wait ~10 seconds for pmproxy to initialise, then verify:
+
+```bash
+curl http://localhost:44322/series/query?expr=kernel.all.load
+```
+
+### 2. Build the pmmcp container
+
+> **Note:** The image is not yet published to a registry ([#1](https://github.com/anthropics/pmmcp/issues/1)).
+> Build it locally first.
+
+```bash
+docker build -t pmmcp .
+```
+
+### 3. Wire it up in Claude Code
+
+Add this to `.mcp.json` in your project root (or `~/.claude/mcp.json` for global config):
+
+```json
+{
+  "mcpServers": {
+    "pmmcp": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "--name", "pmmcp", "pmmcp",
+               "--pmproxy-url", "http://host.docker.internal:44322"]
+    }
+  }
+}
+```
+
+`host.docker.internal` resolves to your host machine from inside the container — the
+same host where the compose stack is listening on port 44322.
+
+### 4. Tear down when done
+
+```bash
+docker compose down
+```
+
 ## Development Setup
 
 ```bash
