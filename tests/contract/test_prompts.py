@@ -83,3 +83,47 @@ def test_incident_triage_returns_messages():
     assert result.messages, "Expected at least one message"
     first = result.messages[0]
     assert first.content.text, "First message content must be non-empty"
+
+
+# ---------------------------------------------------------------------------
+# compare_periods (T014)
+# ---------------------------------------------------------------------------
+
+
+def test_compare_periods_registered():
+    """compare_periods prompt is registered with the MCP server."""
+    prompts = {p.name for p in srv.mcp._prompt_manager.list_prompts()}
+    assert "compare_periods" in prompts
+
+
+def test_compare_periods_schema():
+    """compare_periods has correct required/optional argument schema."""
+    prompts = {p.name: p for p in srv.mcp._prompt_manager.list_prompts()}
+    p = prompts["compare_periods"]
+    args = {a.name: a for a in (p.arguments or [])}
+
+    for required_arg in ("baseline_start", "baseline_end", "comparison_start", "comparison_end"):
+        assert required_arg in args, f"{required_arg} argument missing"
+        assert args[required_arg].required is True
+
+    for optional_arg in ("host", "subsystem", "context"):
+        assert optional_arg in args, f"{optional_arg} argument missing"
+        assert args[optional_arg].required is False
+
+
+def test_compare_periods_returns_messages():
+    """compare_periods returns a non-empty, well-formed message list."""
+    result = asyncio.run(
+        srv.mcp.get_prompt(
+            "compare_periods",
+            {
+                "baseline_start": "-8hours",
+                "baseline_end": "-4hours",
+                "comparison_start": "-4hours",
+                "comparison_end": "now",
+            },
+        )
+    )
+    assert result.messages, "Expected at least one message"
+    first = result.messages[0]
+    assert first.content.text, "First message content must be non-empty"
