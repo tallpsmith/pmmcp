@@ -24,6 +24,15 @@ def _compare_periods_impl(
     host_clause = f" on host **{host}**" if host else " (all hosts)"
     subsystem_clause = f" scoped to the **{subsystem}** subsystem" if subsystem else ""
     context_clause = f"\n\n**Change context**: {context}" if context else ""
+    discovery_scope = (
+        f"Since the comparison is scoped to **{subsystem}**, "
+        f"focus discovery on that subsystem's namespace."
+        if subsystem
+        else (
+            "Start broad across all major namespaces: `kernel.*` (CPU), `mem.*` (memory), "
+            "`disk.*` (I/O), `network.*` (bandwidth/errors), `proc.*` (processes)."
+        )
+    )
 
     content = f"""\
 You are performing a before/after performance comparison.{context_clause}
@@ -60,7 +69,7 @@ which hosts show the largest delta in the findings.
 Use `pcp_discover_metrics` to enumerate the available metric namespace. \
 Do not assume metric names — discover what is actually present.
 
-{f"Since the comparison is scoped to **{subsystem}**, focus discovery on that subsystem's namespace." if subsystem else "Start broad across all major namespaces: `kernel.*` (CPU), `mem.*` (memory), `disk.*` (I/O), `network.*` (bandwidth), `proc.*` (processes)."}
+{discovery_scope}
 
 Use `pcp_search` to find additional relevant metrics by keyword. \
 Use `pcp_get_metric_info` to check semantics (counter vs instant) before comparing.
@@ -165,6 +174,11 @@ def compare_periods(
         context: Description of what changed between the windows (optional)
     """
     return _compare_periods_impl(
-        baseline_start, baseline_end, comparison_start, comparison_end,
-        host, subsystem, context,
+        baseline_start,
+        baseline_end,
+        comparison_start,
+        comparison_end,
+        host,
+        subsystem,
+        context,
     )

@@ -13,7 +13,7 @@ _DEFAULT_SUBSYSTEMS = "cpu,memory,disk,network"
 _KPI_TABLE = """\
 | Subsystem | Key Metrics | Units | Concern Threshold |
 |-----------|-------------|-------|------------------|
-| CPU | `kernel.all.cpu.user` + `kernel.all.cpu.sys` (rate-converted) | % utilisation | > 80% sustained |
+| CPU | `kernel.all.cpu.user` + `kernel.all.cpu.sys` (rate-converted) | % | > 80% sustained |
 | Memory | `mem.util.used` / `mem.util.physmem` | % utilisation | > 90% |
 | Disk I/O | `disk.all.avactive` | ms service time | > 100 ms |
 | Network | `network.interface.out.bytes` (rate-converted) | Kbytes/s | Interface-dependent |

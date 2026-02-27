@@ -4,7 +4,7 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Performance Co-Pi
 
 ## What It Does
 
-pmmcp gives AI agents 9 MCP tools for performance investigation:
+pmmcp gives AI agents 9 MCP tools and 4 MCP prompt templates for performance investigation:
 
 | Tool | Description |
 |------|-------------|
@@ -59,20 +59,22 @@ Add pmmcp to `.mcp.json` in your project root (or `~/.claude/mcp.json` for globa
 
 Add `"--timeout", "60"` to the `args` array to increase the HTTP timeout (default: 30 seconds).
 
-## Install Subagents (Optional)
+## Prompts
 
-Copy the companion subagent definitions to your Claude Code agents directory:
+pmmcp exposes four MCP prompt templates that seed an AI conversation with an expert
+investigation workflow. Invoke any prompt from your MCP client to get step-by-step
+guidance without reading external documentation.
 
-```bash
-cp agents/*.md ~/.claude/agents/
-```
+| Prompt | Required args | Optional args | Workflow |
+|--------|--------------|---------------|---------|
+| `investigate_subsystem` | `subsystem` | `host`, `timerange`, `symptom` | Discovery-first investigation of a single subsystem (cpu, memory, disk, network, process, or general). Includes namespace hints, hierarchical sampling, presentation standards, and guard clauses. |
+| `incident_triage` | `symptom` | `host`, `timerange` | Maps a natural-language symptom to likely subsystems, confirms host-specific vs fleet-wide scope, performs rapid broad assessment, and delivers ranked findings with recommended actions. |
+| `compare_periods` | `baseline_start`, `baseline_end`, `comparison_start`, `comparison_end` | `host`, `subsystem`, `context` | Broad-scan-first comparison between two time windows, ranked by magnitude of change, with overlap detection guard and root-cause hypothesis. |
+| `fleet_health_check` | _(none)_ | `timerange`, `subsystems`, `detail_level` | Enumerates all fleet hosts, checks default subsystems (cpu, memory, disk, network), and produces a host-by-subsystem summary table with OK/WARN/CRIT indicators. Use `detail_level=detailed` to drill into anomalous hosts. |
 
-This gives you four specialized agents:
-
-- **performance-investigator** — diagnose performance problems interactively
-- **metric-explorer** — discover and explain available metrics
-- **performance-comparator** — compare two time periods statistically
-- **performance-reporter** — generate structured performance reports
+All prompts follow a **discovery-first** pattern (enumerate available metrics before
+assuming any metric names) and include guard clauses for missing tools, no-metrics-found,
+and out-of-retention timeranges.
 
 ## Example Queries
 

@@ -9,10 +9,7 @@ FR-020: overlapping windows → invalid input, stop
 
 from __future__ import annotations
 
-import pytest
-
 from pmmcp.prompts.compare import _compare_periods_impl
-
 
 BASELINE = ("-8hours", "-4hours")
 COMPARISON = ("-4hours", "now")

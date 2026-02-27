@@ -78,15 +78,15 @@ prompt to be present.
 
 ### Tests for User Story 2 *(write first — confirm RED before implementing)*
 
-- [ ] T009 [P] [US2] Write failing unit tests for `_incident_triage_impl` covering FR-010–FR-012, FR-017, FR-019, FR-022 assertions in tests/unit/test_prompts_triage.py
-- [ ] T010 [P] [US2] Add failing `incident_triage` contract assertions (schema + message structure) to tests/contract/test_prompts.py
+- [X] T009 [P] [US2] Write failing unit tests for `_incident_triage_impl` covering FR-010–FR-012, FR-017, FR-019, FR-022 assertions in tests/unit/test_prompts_triage.py
+- [X] T010 [P] [US2] Add failing `incident_triage` contract assertions (schema + message structure) to tests/contract/test_prompts.py
 
 > **Commit after RED confirmed**: `test: add failing tests for incident_triage prompt`
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] Implement `_incident_triage_impl` and `@mcp.prompt() incident_triage` with symptom mapping table, scope confirmation, general-sweep fallback, and all guard clauses in src/pmmcp/prompts/triage.py
-- [ ] T012 [US2] Add `from pmmcp.prompts import triage  # noqa: F401` to src/pmmcp/prompts/__init__.py
+- [X] T011 [US2] Implement `_incident_triage_impl` and `@mcp.prompt() incident_triage` with symptom mapping table, scope confirmation, general-sweep fallback, and all guard clauses in src/pmmcp/prompts/triage.py
+- [X] T012 [US2] Add `from pmmcp.prompts import triage  # noqa: F401` to src/pmmcp/prompts/__init__.py
 
 > **Commit after GREEN + pre-push-sanity**: `feat: implement incident_triage prompt`
 
@@ -106,16 +106,16 @@ detection with stop-on-overlap behaviour, and out-of-retention guard clause.
 
 ### Tests for User Story 3 *(write first — confirm RED before implementing)*
 
-- [ ] T013 [P] [US3] Write failing unit tests for `_compare_periods_impl` covering FR-006–FR-007, FR-017, FR-019–FR-020 assertions in tests/unit/test_prompts_compare.py
-- [ ] T014 [P] [US3] Add failing `compare_periods` contract assertions (schema + message structure) to tests/contract/test_prompts.py
+- [X] T013 [P] [US3] Write failing unit tests for `_compare_periods_impl` covering FR-006–FR-007, FR-017, FR-019–FR-020 assertions in tests/unit/test_prompts_compare.py
+- [X] T014 [P] [US3] Add failing `compare_periods` contract assertions (schema + message structure) to tests/contract/test_prompts.py
 
 > **Commit after RED confirmed**: `test: add failing tests for compare_periods prompt`
 
 ### Implementation for User Story 3
 
-- [ ] T015 [US3] Implement `_compare_periods_impl` and `@mcp.prompt() compare_periods` with overlap detection, broad-scan instruction, magnitude ranking, root-cause hypothesis, and all guard clauses in src/pmmcp/prompts/compare.py
-- [ ] T016 [US3] Add `from pmmcp.prompts import compare  # noqa: F401` to src/pmmcp/prompts/__init__.py
-- [ ] T017 [P] [US3] Delete agents/performance-comparator.md (content migrated to compare.py)
+- [X] T015 [US3] Implement `_compare_periods_impl` and `@mcp.prompt() compare_periods` with overlap detection, broad-scan instruction, magnitude ranking, root-cause hypothesis, and all guard clauses in src/pmmcp/prompts/compare.py
+- [X] T016 [US3] Add `from pmmcp.prompts import compare  # noqa: F401` to src/pmmcp/prompts/__init__.py
+- [X] T017 [P] [US3] Delete agents/performance-comparator.md (content migrated to compare.py)
 
 > **Commit after GREEN + pre-push-sanity**: `feat: implement compare_periods prompt + retire performance-comparator agent`
 
@@ -136,16 +136,16 @@ includes no-hosts-found and out-of-retention guard clauses.
 
 ### Tests for User Story 4 *(write first — confirm RED before implementing)*
 
-- [ ] T018 [P] [US4] Write failing unit tests for `_fleet_health_check_impl` covering FR-008–FR-009, FR-017–FR-019, FR-021 assertions in tests/unit/test_prompts_health.py
-- [ ] T019 [P] [US4] Add failing `fleet_health_check` contract assertions (schema + message structure) and `test_all_4_prompts_registered` assertion to tests/contract/test_prompts.py
+- [X] T018 [P] [US4] Write failing unit tests for `_fleet_health_check_impl` covering FR-008–FR-009, FR-017–FR-019, FR-021 assertions in tests/unit/test_prompts_health.py
+- [X] T019 [P] [US4] Add failing `fleet_health_check` contract assertions (schema + message structure) and `test_all_4_prompts_registered` assertion to tests/contract/test_prompts.py
 
 > **Commit after RED confirmed**: `test: add failing tests for fleet_health_check prompt`
 
 ### Implementation for User Story 4
 
-- [ ] T020 [US4] Implement `_fleet_health_check_impl` and `@mcp.prompt() fleet_health_check` with host check, summary table instruction, detail-level handling, subsystem/timerange scoping, and all guard clauses in src/pmmcp/prompts/health.py
-- [ ] T021 [US4] Finalize src/pmmcp/prompts/__init__.py with all four imports: `from pmmcp.prompts import compare, health, investigate, triage  # noqa: F401`
-- [ ] T022 [P] [US4] Delete agents/performance-reporter.md (content migrated to health.py)
+- [X] T020 [US4] Implement `_fleet_health_check_impl` and `@mcp.prompt() fleet_health_check` with host check, summary table instruction, detail-level handling, subsystem/timerange scoping, and all guard clauses in src/pmmcp/prompts/health.py
+- [X] T021 [US4] Finalize src/pmmcp/prompts/__init__.py with all four imports: `from pmmcp.prompts import compare, health, investigate, triage  # noqa: F401`
+- [X] T022 [P] [US4] Delete agents/performance-reporter.md (content migrated to health.py)
 
 > **Commit after GREEN + pre-push-sanity**: `feat: implement fleet_health_check prompt + retire performance-reporter agent`
 
@@ -157,9 +157,9 @@ includes no-hosts-found and out-of-retention guard clauses.
 
 **Purpose**: Final validation and audit of migrated content
 
-- [ ] T023 Run scripts/pre-push-sanity.sh for final lint + format + test pass with coverage ≥ 80% confirmed
-- [ ] T024 [P] Audit agent content migration — verify investigation patterns, metric hints, namespace tables, presentation standards, and threshold guidance from all four retired agents are preserved in prompt implementations (SC-004)
-- [ ] T025 [P] Update README.md — add a "Prompts" section listing all four prompts with their purpose, accepted arguments (required vs optional), and a one-line description of the investigation workflow each provides (SC-003)
+- [X] T023 Run scripts/pre-push-sanity.sh for final lint + format + test pass with coverage ≥ 80% confirmed
+- [X] T024 [P] Audit agent content migration — verify investigation patterns, metric hints, namespace tables, presentation standards, and threshold guidance from all four retired agents are preserved in prompt implementations (SC-004)
+- [X] T025 [P] Update README.md — add a "Prompts" section listing all four prompts with their purpose, accepted arguments (required vs optional), and a one-line description of the investigation workflow each provides (SC-003)
 
 ---
 

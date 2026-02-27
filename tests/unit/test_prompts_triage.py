@@ -10,8 +10,6 @@ FR-022: unmappable symptom → fall back to general sweep
 
 from __future__ import annotations
 
-import pytest
-
 from pmmcp.prompts.triage import _incident_triage_impl
 
 
@@ -64,6 +62,7 @@ def test_timerange_interpolated_when_provided():
 def test_no_severity_parameter():
     """FR-010: no severity parameter — function signature must not accept severity."""
     import inspect
+
     sig = inspect.signature(_incident_triage_impl)
     assert "severity" not in sig.parameters, "severity parameter must not exist (FR-010)"
 
@@ -88,8 +87,7 @@ def test_mapping_table_covers_known_symptoms():
     full_text = " ".join(msg["content"] for msg in result)
     # Should reference CPU, disk/io, network as likely culprits for latency
     subsystems_mentioned = sum(
-        1 for s in ("cpu", "disk", "network", "memory", "process")
-        if s in full_text.lower()
+        1 for s in ("cpu", "disk", "network", "memory", "process") if s in full_text.lower()
     )
     assert subsystems_mentioned >= 3, "mapping guidance should mention ≥3 subsystems"
 

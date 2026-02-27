@@ -11,8 +11,6 @@ FR-021: no-hosts-found abort guard
 
 from __future__ import annotations
 
-import pytest
-
 from pmmcp.prompts.health import _fleet_health_check_impl
 
 
@@ -44,7 +42,9 @@ def test_custom_subsystems_respected():
     """FR-008: custom subsystems argument scopes the assessment."""
     result = _fleet_health_check_impl(subsystems="cpu,memory")
     full_text = " ".join(msg["content"] for msg in result)
-    assert "cpu,memory" in full_text or ("cpu" in full_text.lower() and "memory" in full_text.lower())
+    assert "cpu,memory" in full_text or (
+        "cpu" in full_text.lower() and "memory" in full_text.lower()
+    )
 
 
 def test_timerange_interpolated_when_provided():

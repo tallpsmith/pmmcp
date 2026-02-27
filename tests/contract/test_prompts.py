@@ -77,9 +77,7 @@ def test_incident_triage_schema():
 
 def test_incident_triage_returns_messages():
     """incident_triage returns a non-empty, well-formed message list."""
-    result = asyncio.run(
-        srv.mcp.get_prompt("incident_triage", {"symptom": "high CPU load"})
-    )
+    result = asyncio.run(srv.mcp.get_prompt("incident_triage", {"symptom": "high CPU load"}))
     assert result.messages, "Expected at least one message"
     first = result.messages[0]
     assert first.content.text, "First message content must be non-empty"
