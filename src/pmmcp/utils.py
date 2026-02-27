@@ -2,6 +2,23 @@ import math
 import re
 from datetime import UTC, datetime, timedelta
 
+_SHORT_UNIT_MAP = {"s": "seconds", "m": "minutes", "h": "hours", "d": "days", "w": "weeks"}
+
+
+def expand_time_units(expr: str) -> str:
+    """Expand abbreviated time units to full forms pmproxy's series API accepts.
+
+    Converts e.g. '-2m' to '-2minutes', '-1h' to '-1hours'.
+    Leaves 'now', full-form expressions, and ISO timestamps unchanged.
+    """
+    if expr in ("now", ""):
+        return expr
+    match = re.fullmatch(r"(-\d+)\s*([smhdw])$", expr.strip())
+    if match:
+        n, unit = match.group(1), match.group(2)
+        return f"{n}{_SHORT_UNIT_MAP[unit]}"
+    return expr
+
 
 def parse_time_expr(expr: str, _now: datetime | None = None) -> datetime:
     """Parse a PCP relative time expression or ISO-8601 timestamp to datetime.
