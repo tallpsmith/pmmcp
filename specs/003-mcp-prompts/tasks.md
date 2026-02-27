@@ -27,8 +27,8 @@ blocking prerequisite — no user story work can begin until both tasks are comp
 
 **Commit**: `chore: add prompts package skeleton and server registration hook`
 
-- [ ] T001 Create empty package init at src/pmmcp/prompts/__init__.py
-- [ ] T002 Add `import pmmcp.prompts  # noqa: E402, F401` side-effect import to src/pmmcp/server.py (after existing `import pmmcp.tools` line)
+- [X] T001 Create empty package init at src/pmmcp/prompts/__init__.py
+- [X] T002 Add `import pmmcp.prompts  # noqa: E402, F401` side-effect import to src/pmmcp/server.py (after existing `import pmmcp.tools` line)
 
 **Checkpoint**: Package is importable; server registration hook exists. User story work can now begin.
 
@@ -47,17 +47,17 @@ presentation standards, and all required guard-clause keywords.
 
 ### Tests for User Story 1 *(write first — confirm RED before implementing)*
 
-- [ ] T003 [P] [US1] Write failing unit tests for `_investigate_subsystem_impl` covering all FR-003–FR-005, FR-013–FR-014, FR-017–FR-019 assertions in tests/unit/test_prompts_investigate.py
-- [ ] T004 [P] [US1] Write failing contract tests for `investigate_subsystem` (schema + non-empty message list) in tests/contract/test_prompts.py
+- [X] T003 [P] [US1] Write failing unit tests for `_investigate_subsystem_impl` covering all FR-003–FR-005, FR-013–FR-014, FR-017–FR-019 assertions in tests/unit/test_prompts_investigate.py
+- [X] T004 [P] [US1] Write failing contract tests for `investigate_subsystem` (schema + non-empty message list) in tests/contract/test_prompts.py
 
 > **Commit after RED confirmed**: `test: add failing tests for investigate_subsystem prompt`
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Implement `_investigate_subsystem_impl` and `@mcp.prompt() investigate_subsystem` with all workflow phases, subsystem hints, and guard clauses in src/pmmcp/prompts/investigate.py
-- [ ] T006 [US1] Add `from pmmcp.prompts import investigate  # noqa: F401` to src/pmmcp/prompts/__init__.py
-- [ ] T007 [P] [US1] Delete agents/performance-investigator.md (content migrated to investigate.py)
-- [ ] T008 [P] [US1] Delete agents/metric-explorer.md (content migrated to investigate.py)
+- [X] T005 [US1] Implement `_investigate_subsystem_impl` and `@mcp.prompt() investigate_subsystem` with all workflow phases, subsystem hints, and guard clauses in src/pmmcp/prompts/investigate.py
+- [X] T006 [US1] Add `from pmmcp.prompts import investigate  # noqa: F401` to src/pmmcp/prompts/__init__.py
+- [X] T007 [P] [US1] Delete agents/performance-investigator.md (content migrated to investigate.py)
+- [X] T008 [P] [US1] Delete agents/metric-explorer.md (content migrated to investigate.py)
 
 > **Commit after GREEN + pre-push-sanity**: `feat: implement investigate_subsystem prompt + retire performance-investigator and metric-explorer agents`
 
