@@ -159,6 +159,7 @@ includes no-hosts-found and out-of-retention guard clauses.
 
 - [ ] T023 Run scripts/pre-push-sanity.sh for final lint + format + test pass with coverage ≥ 80% confirmed
 - [ ] T024 [P] Audit agent content migration — verify investigation patterns, metric hints, namespace tables, presentation standards, and threshold guidance from all four retired agents are preserved in prompt implementations (SC-004)
+- [ ] T025 [P] Update README.md — add a "Prompts" section listing all four prompts with their purpose, accepted arguments (required vs optional), and a one-line description of the investigation workflow each provides (SC-003)
 
 ---
 
