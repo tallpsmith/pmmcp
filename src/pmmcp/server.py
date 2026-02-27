@@ -45,3 +45,4 @@ mcp = FastMCP("pmmcp", lifespan=_lifespan)
 # Side-effect imports: triggers @mcp.tool registration for all tool modules.
 # This import MUST be at the bottom to avoid circular import issues.
 import pmmcp.tools  # noqa: E402, F401
+import pmmcp.prompts  # noqa: E402, F401
