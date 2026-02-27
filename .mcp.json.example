@@ -2,7 +2,14 @@
   "mcpServers": {
     "pmmcp": {
       "command": "docker",
-      "args": ["run", "-i", "--rm", "ghcr.io/<org>/pmmcp", "--pmproxy-url", "http://your-pmproxy-host:44322"]
+      "args": ["run", "-i", "--rm", "--name", "pmmcp", "pmmcp", "--pmproxy-url", "http://host.docker.internal:44322"]
     }
   }
 }
+
+// NOTE: The pmmcp image is not yet published to a registry (see GitHub issue #1).
+// Build it locally first:
+//   docker build -t pmmcp .
+//
+// Replace --pmproxy-url with your pmproxy host. If using the bundled docker-compose
+// test harness, use http://host.docker.internal:44322
