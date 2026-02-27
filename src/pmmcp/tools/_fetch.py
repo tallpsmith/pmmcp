@@ -1,0 +1,83 @@
+"""Shared timeseries window-fetching helper for tool modules."""
+
+from __future__ import annotations
+
+from pmmcp.client import PmproxyClient, PmproxyConnectionError, PmproxyError, PmproxyTimeoutError
+from pmmcp.utils import expand_time_units
+
+
+async def _fetch_window(
+    client: PmproxyClient,
+    expr: str,
+    start: str,
+    end: str,
+    interval: str,
+    limit: int,
+) -> tuple[dict[tuple[str, str | None], list[float]], dict[tuple[str, str | None], list[dict]]]:
+    """Fetch a time window and return (numeric_values_by_key, raw_samples_by_key).
+
+    Raises PmproxyConnectionError, PmproxyTimeoutError, or PmproxyError on failure.
+    """
+    try:
+        series_ids = await client.series_query(expr)
+    except (PmproxyConnectionError, PmproxyTimeoutError, PmproxyError):
+        raise
+
+    if not series_ids:
+        return {}, {}
+
+    if isinstance(series_ids[0], dict):
+        series_ids = list({entry["series"] for entry in series_ids})
+
+    try:
+        raw_values = await client.series_values(
+            series=series_ids,
+            start=expand_time_units(start),
+            finish=expand_time_units(end),
+            interval=interval,
+            samples=limit,
+        )
+    except (PmproxyConnectionError, PmproxyTimeoutError, PmproxyError):
+        raise
+
+    # Get metric names for series IDs
+    name_by_series: dict[str, str] = {}
+    try:
+        labels_list = await client.series_labels(series_ids)
+        for item in labels_list:
+            metric_name = item.get("labels", {}).get("metric.name", "")
+            if metric_name:
+                name_by_series[item["series"]] = metric_name
+    except PmproxyError:
+        pass
+
+    # Get instance names
+    instance_name_by_series: dict[str, str] = {}
+    try:
+        instances_list = await client.series_instances(series_ids)
+        for item in instances_list:
+            instance_name_by_series[item["series"]] = item.get("name", "")
+    except PmproxyError:
+        pass
+
+    numeric_values: dict[tuple[str, str | None], list[float]] = {}
+    raw_samples: dict[tuple[str, str | None], list[dict]] = {}
+
+    for point in raw_values:
+        series_id = point["series"]
+        metric_name = name_by_series.get(series_id, series_id)
+        instance_name = instance_name_by_series.get(series_id) or None
+        key = (metric_name, instance_name)
+
+        try:
+            numeric_val = float(point["value"])
+        except (ValueError, TypeError):
+            continue
+
+        if key not in numeric_values:
+            numeric_values[key] = []
+            raw_samples[key] = []
+        numeric_values[key].append(numeric_val)
+        raw_samples[key].append({"timestamp": point["timestamp"], "value": numeric_val})
+
+    return numeric_values, raw_samples
