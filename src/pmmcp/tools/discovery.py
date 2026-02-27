@@ -12,13 +12,9 @@ from pmmcp.client import (
     PmproxyTimeoutError,
 )
 from pmmcp.server import get_client, mcp
+from pmmcp.tools._errors import _mcp_error
 
 logger = logging.getLogger(__name__)
-
-
-def _mcp_error(category: str, description: str, suggestion: str) -> dict:
-    text = f"Error: {category}\n\nDetails: {description}\nSuggestion: {suggestion}"
-    return {"content": [{"type": "text", "text": text}], "isError": True}
 
 
 async def _discover_metrics_impl(

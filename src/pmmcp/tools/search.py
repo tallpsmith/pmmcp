@@ -4,11 +4,7 @@ from __future__ import annotations
 
 from pmmcp.client import PmproxyClient, PmproxyConnectionError, PmproxyError, PmproxyTimeoutError
 from pmmcp.server import get_client, mcp
-
-
-def _mcp_error(category: str, description: str, suggestion: str) -> dict:
-    text = f"Error: {category}\n\nDetails: {description}\nSuggestion: {suggestion}"
-    return {"content": [{"type": "text", "text": text}], "isError": True}
+from pmmcp.tools._errors import _mcp_error
 
 
 async def _search_impl(
