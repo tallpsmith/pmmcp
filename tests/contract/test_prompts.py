@@ -39,9 +39,7 @@ def test_investigate_subsystem_schema():
 
 def test_investigate_subsystem_returns_messages():
     """investigate_subsystem returns a non-empty, well-formed message list."""
-    result = asyncio.run(
-        srv.mcp.get_prompt("investigate_subsystem", {"subsystem": "cpu"})
-    )
+    result = asyncio.run(srv.mcp.get_prompt("investigate_subsystem", {"subsystem": "cpu"}))
     assert result.messages, "Expected at least one message"
     first = result.messages[0]
     assert first.content.text, "First message content must be non-empty"
