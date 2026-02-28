@@ -29,7 +29,12 @@ src/pmmcp/          # Main package
     derived.py      # pcp_derive_metric
     discovery.py    # pcp_discover_metrics, pcp_get_metric_info
     comparison.py   # pcp_compare_windows
-agents/             # Claude Code subagent definitions (.md)
+  prompts/          # MCP Prompt templates (one module per prompt)
+    investigate.py  # investigate_subsystem
+    triage.py       # incident_triage
+    compare.py      # compare_periods
+    health.py       # fleet_health_check
+agents/             # Claude Code subagent definitions (.md) — retiring as prompts are implemented
 tests/
   unit/             # respx-mocked unit tests per tool
   contract/         # MCP schema + error format contract tests
@@ -40,6 +45,8 @@ tests/
 ## Commands
 
 All dev commands use `uv` — it manages the virtualenv automatically, no activation needed.
+
+> **Multi-environment note**: This project runs on both macOS (local) and Linux (VM). The `.venv` is platform-specific. Always run `uv sync --extra dev` before any test/lint/build commands when there's any chance the environment has changed. `uv sync` is idempotent and fast when nothing changed, but correctly rebuilds the venv for the current platform when needed. Default to running it — do not skip it to save time.
 
 ```bash
 # Install (dev mode)
@@ -128,9 +135,50 @@ Suggested groupings when implementing tasks:
 
 Use conventional commit prefixes: `feat:`, `test:`, `chore:`, `fix:`, `docs:`, `refactor:`
 
+## Story-by-Story Development Loop
+
+**Mandatory development pattern** (required by Constitution v1.2.0, Principle II).
+
+Each user story or task is a complete, independent unit of work. The loop:
+
+```
+1. Write failing tests  →  uv run pytest (confirm RED)
+                       →  git commit "test: <story description>"
+2. Implement            →  uv run pytest (confirm GREEN)
+3. Refactor             →  uv run pytest (still GREEN)
+4. Pre-push sanity      →  scripts/pre-push-sanity.sh (lint + format + tests)
+5. Commit + push        →  git commit "feat: <story description>"
+                       →  git push
+```
+
+Rules:
+- No implementation starts before failing tests are committed
+- Each story's tests + implementation land as separate commits
+- The pre-push sanity check MUST pass before every `git push`
+- Stories are worked one at a time — finish and push one before starting the next
+
+## MCP Prompt Pattern
+
+Prompts follow the same `_*_impl()` pattern as tools:
+
+```python
+# src/pmmcp/prompts/investigate.py
+def _investigate_subsystem_impl(subsystem: str, host: str | None = None, ...) -> list[dict]:
+    """Pure function — call directly in unit tests."""
+    ...
+
+@mcp.prompt()
+def investigate_subsystem(subsystem: str, ...) -> list[dict]:
+    return _investigate_subsystem_impl(subsystem, ...)
+```
+
+- Prompts return `list[dict]` with `{"role": "user", "content": "..."}` — FastMCP converts to `PromptMessage`
+- Registration: side-effect import `import pmmcp.prompts` in `server.py` (bottom, like tools)
+- Contract tests use `srv.mcp._prompt_manager.list_prompts()` and `asyncio.run(srv.mcp.get_prompt(...))`
+
 ## Pre-Push Sanity Check
 
-**Mandatory before any `git push`** (required by Constitution v1.1.0, Principle II).
+**Mandatory before any `git push`** (required by Constitution v1.2.0, Principle II).
 
 Run either:
 ```bash

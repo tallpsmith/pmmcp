@@ -4,7 +4,7 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Performance Co-Pi
 
 ## What It Does
 
-pmmcp gives AI agents 9 MCP tools for performance investigation:
+pmmcp gives AI agents 9 MCP tools and 4 MCP prompt templates for performance investigation:
 
 | Tool | Description |
 |------|-------------|
@@ -24,7 +24,7 @@ pmmcp gives AI agents 9 MCP tools for performance investigation:
 - **pmproxy** running and accessible (default port: 44322)
   - For time-series features (`pcp_fetch_timeseries`, `pcp_query_series`, `pcp_compare_windows`): pmproxy must be configured with a Valkey/Redis backend
 - **Claude Code** (or another MCP client)
-- **One of**: Python 3.11+ or Docker
+- **One of**: Python 3.11+ with [uv](https://docs.astral.sh/uv/) or Docker
 
 ## Installation
 
@@ -35,7 +35,7 @@ pmmcp gives AI agents 9 MCP tools for performance investigation:
 ```bash
 git clone <repository-url>
 cd pmmcp
-uv sync
+uv sync          # installs pmmcp and its dependencies into the uv-managed venv
 ```
 
 ## Configure Claude Code
@@ -44,12 +44,14 @@ Add pmmcp to `.mcp.json` in your project root (or `~/.claude/mcp.json` for globa
 
 ### Python (installed from source)
 
+> **Prerequisite:** Run `uv sync` from the repo root first (see Installation above).
+
 ```json
 {
   "mcpServers": {
     "pmmcp": {
-      "command": "python",
-      "args": ["-m", "pmmcp", "--pmproxy-url", "http://your-pmproxy-host:44322"]
+      "command": "uv",
+      "args": ["run", "pmmcp", "--pmproxy-url", "http://your-pmproxy-host:44322"]
     }
   }
 }
@@ -59,20 +61,22 @@ Add pmmcp to `.mcp.json` in your project root (or `~/.claude/mcp.json` for globa
 
 Add `"--timeout", "60"` to the `args` array to increase the HTTP timeout (default: 30 seconds).
 
-## Install Subagents (Optional)
+## Prompts
 
-Copy the companion subagent definitions to your Claude Code agents directory:
+pmmcp exposes four MCP prompt templates that seed an AI conversation with an expert
+investigation workflow. Invoke any prompt from your MCP client to get step-by-step
+guidance without reading external documentation.
 
-```bash
-cp agents/*.md ~/.claude/agents/
-```
+| Prompt | Required args | Optional args | Workflow |
+|--------|--------------|---------------|---------|
+| `investigate_subsystem` | `subsystem` | `host`, `timerange`, `symptom` | Discovery-first investigation of a single subsystem (cpu, memory, disk, network, process, or general). Includes namespace hints, hierarchical sampling, presentation standards, and guard clauses. |
+| `incident_triage` | `symptom` | `host`, `timerange` | Maps a natural-language symptom to likely subsystems, confirms host-specific vs fleet-wide scope, performs rapid broad assessment, and delivers ranked findings with recommended actions. |
+| `compare_periods` | `baseline_start`, `baseline_end`, `comparison_start`, `comparison_end` | `host`, `subsystem`, `context` | Broad-scan-first comparison between two time windows, ranked by magnitude of change, with overlap detection guard and root-cause hypothesis. |
+| `fleet_health_check` | _(none)_ | `timerange`, `subsystems`, `detail_level` | Enumerates all fleet hosts, checks default subsystems (cpu, memory, disk, network), and produces a host-by-subsystem summary table with OK/WARN/CRIT indicators. Use `detail_level=detailed` to drill into anomalous hosts. |
 
-This gives you four specialized agents:
-
-- **performance-investigator** — diagnose performance problems interactively
-- **metric-explorer** — discover and explain available metrics
-- **performance-comparator** — compare two time periods statistically
-- **performance-reporter** — generate structured performance reports
+All prompts follow a **discovery-first** pattern (enumerate available metrics before
+assuming any metric names) and include guard clauses for missing tools, no-metrics-found,
+and out-of-retention timeranges.
 
 ## Example Queries
 
@@ -88,6 +92,61 @@ Response times have been terrible for the last 2 hours. What's going on?
 Compare this week's performance to last week for all hosts.
 
 Give me a summary of all services over the past 7 days, highlighting anything that's degraded.
+```
+
+## Try It Out Locally
+
+No PCP infrastructure? No problem — the bundled compose stack spins up a fully functional
+PCP + Redis environment in under a minute.
+
+### 1. Start the test harness
+
+```bash
+docker compose up -d
+```
+
+This starts:
+- `quay.io/performancecopilot/pcp` — pmcd + pmproxy (port 44322)
+- `redis/redis-stack` — time-series backend for historical queries (port 6379)
+
+Wait ~10 seconds for pmproxy to initialise, then verify:
+
+```bash
+curl http://localhost:44322/series/query?expr=kernel.all.load
+```
+
+### 2. Build the pmmcp container
+
+> **Note:** The image is not yet published to a registry ([#1](https://github.com/anthropics/pmmcp/issues/1)).
+> Build it locally first.
+
+```bash
+docker build -t pmmcp .
+```
+
+### 3. Wire it up in Claude Code
+
+Add this to `.mcp.json` in your project root (or `~/.claude/mcp.json` for global config):
+
+```json
+{
+  "mcpServers": {
+    "pmmcp": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "--name", "pmmcp", "pmmcp",
+               "--pmproxy-url", "http://host.docker.internal:44322"]
+    }
+  }
+}
+```
+
+`host.docker.internal` resolves to your host machine from inside the container — the
+same host where the compose stack is listening on port 44322.
+
+### 4. Tear down when done
+
+```bash
+docker compose down
 ```
 
 ## Development Setup
