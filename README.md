@@ -24,7 +24,7 @@ pmmcp gives AI agents 9 MCP tools and 4 MCP prompt templates for performance inv
 - **pmproxy** running and accessible (default port: 44322)
   - For time-series features (`pcp_fetch_timeseries`, `pcp_query_series`, `pcp_compare_windows`): pmproxy must be configured with a Valkey/Redis backend
 - **Claude Code** (or another MCP client)
-- **One of**: Python 3.11+ or Docker
+- **One of**: Python 3.11+ with [uv](https://docs.astral.sh/uv/) or Docker
 
 ## Installation
 
@@ -35,7 +35,7 @@ pmmcp gives AI agents 9 MCP tools and 4 MCP prompt templates for performance inv
 ```bash
 git clone <repository-url>
 cd pmmcp
-uv sync
+uv sync          # installs pmmcp and its dependencies into the uv-managed venv
 ```
 
 ## Configure Claude Code
@@ -44,12 +44,14 @@ Add pmmcp to `.mcp.json` in your project root (or `~/.claude/mcp.json` for globa
 
 ### Python (installed from source)
 
+> **Prerequisite:** Run `uv sync` from the repo root first (see Installation above).
+
 ```json
 {
   "mcpServers": {
     "pmmcp": {
-      "command": "python",
-      "args": ["-m", "pmmcp", "--pmproxy-url", "http://your-pmproxy-host:44322"]
+      "command": "uv",
+      "args": ["run", "pmmcp", "--pmproxy-url", "http://your-pmproxy-host:44322"]
     }
   }
 }
