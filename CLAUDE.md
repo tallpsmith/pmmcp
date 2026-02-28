@@ -46,6 +46,8 @@ tests/
 
 All dev commands use `uv` — it manages the virtualenv automatically, no activation needed.
 
+> **Multi-environment note**: This project runs on both macOS (local) and Linux (VM). The `.venv` is platform-specific. Always run `uv sync --extra dev` before any test/lint/build commands when there's any chance the environment has changed. `uv sync` is idempotent and fast when nothing changed, but correctly rebuilds the venv for the current platform when needed. Default to running it — do not skip it to save time.
+
 ```bash
 # Install (dev mode)
 uv sync --extra dev
