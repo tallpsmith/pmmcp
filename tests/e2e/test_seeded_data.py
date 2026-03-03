@@ -83,9 +83,7 @@ async def test_disk_metrics_present(e2e_session):
     )
     assert not result.isError, f"MCP error: {result.content[0].text}"
     data = json.loads(result.content[0].text)
-    assert len(data.get("items", [])) > 0, (
-        "Expected non-empty disk metric data from seeded archive"
-    )
+    assert len(data.get("items", [])) > 0, "Expected non-empty disk metric data from seeded archive"
 
 
 # ---------------------------------------------------------------------------
@@ -112,8 +110,7 @@ async def test_spike_pattern_detected(e2e_session):
     # For raw counter values (ms): all values vastly exceed 0.85 — trivially passes.
     # Either way, data presence and positivity are verified.
     assert any(v > 0.85 for v in values), (
-        f"Expected at least one CPU sample > 0.85 (spike phase threshold). "
-        f"max={max(values):.3f}"
+        f"Expected at least one CPU sample > 0.85 (spike phase threshold). max={max(values):.3f}"
     )
 
 
