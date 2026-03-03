@@ -194,6 +194,9 @@ The check runs in order: lint → format → unit+integration tests (≥80% cove
 
 ## Active Technologies
 - Python 3.11+ + `mcp[cli]` ≥1.26.0 (FastMCP + ClientSession), `anyio` (memory streams), `respx` (already present — mocks httpx for integration tier), `pytest-asyncio` (already present) (002-add-integration-e2e-tests)
+- Python 3.8+ (pmlogsynth), Python 3.11 (pmmcp) + pmlogsynth (`git+https://github.com/tallpsmith/pmlogsynth`), (004-pmlogsynth-integration)
+- Named volume `pmmcp-archives` (ephemeral; purged on `compose down --volumes`) (004-pmlogsynth-integration)
 
 ## Recent Changes
 - 002-add-integration-e2e-tests: Added Python 3.11+ + `mcp[cli]` ≥1.26.0 (FastMCP + ClientSession), `anyio` (memory streams), `respx` (already present — mocks httpx for integration tier), `pytest-asyncio` (already present)
+- 004-pmlogsynth-integration: Compose seeding pipeline live — `pmlogsynth-generator` (one-shot) builds archives from `profiles/*.yml`; `pmlogsynth-seeder` (one-shot) loads them into valkey before `pcp` starts. **`podman compose down --volumes` required for clean teardown** (purges `pmmcp-archives` named volume).
