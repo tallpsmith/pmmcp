@@ -114,16 +114,18 @@ async def test_get_metric_info(e2e_session):
 
 @pytest.mark.e2e
 async def test_compare_windows(e2e_session):
-    """pcp_compare_windows returns delta statistics from real PCP."""
+    """pcp_compare_windows returns delta statistics from seeded archive data."""
+    # Use seeded archive window (~70min ago, 60min duration) so data exists
+    # even on a freshly started container with no live history.
     result = await e2e_session.call_tool(
         "pcp_compare_windows",
         {
             "names": ["kernel.all.load"],
-            "window_a_start": "-4m",
-            "window_a_end": "-2m",
-            "window_b_start": "-2m",
-            "window_b_end": "now",
-            "interval": "30s",
+            "window_a_start": "-65minutes",
+            "window_a_end": "-40minutes",
+            "window_b_start": "-40minutes",
+            "window_b_end": "-15minutes",
+            "interval": "5minutes",
         },
     )
     assert not result.isError, f"MCP error: {result.content[0].text}"
