@@ -97,6 +97,16 @@ podman compose down
 - PCP image **requires `privileged: true`** — it uses systemd as PID 1; without it the container exits immediately (code 255)
 - Redis host env var is **`KEY_SERVERS: redis-stack:6379`** (NOT `PCP_REDIS_HOST`) — that's what the container entrypoint reads; wrong value causes pmproxy to hang on all series/search calls
 
+## CI / Local E2E Parity — CRITICAL
+
+**The local compose pipeline and the GitHub Actions E2E workflow MUST test the same topology.** When they diverge, tests pass locally but fail in CI (or vice versa) with no obvious cause.
+
+- **Local** uses `docker-compose.yml` which runs the full seeding pipeline: `pmlogsynth-generator` → `pmlogsynth-seeder` → `pcp` + `redis-stack`
+- **CI** (`.github/workflows/ci.yml`, `e2e` job) uses GitHub Actions **service containers** — historically just bare `pcp` + `redis-stack` with **no generator or seeder**
+- Any E2E test that depends on seeded archive data **will fail in CI** if the workflow doesn't run the seeding pipeline
+- **Rule**: when you add or change compose services that affect E2E test data, you MUST update the CI workflow to match. Check both directions — compose → CI and CI → compose.
+- **Smell test**: if `podman compose up -d` + `pytest -m e2e` passes locally but CI fails on the same tests, the first thing to check is whether CI runs the same containers
+
 ## pmproxy Series API Time Formats
 
 - `/series/values` **rejects abbreviated units** like `-2m`, `-1h` — causes a Content-Length mismatch → `RemoteProtocolError`
