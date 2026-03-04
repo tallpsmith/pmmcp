@@ -31,12 +31,24 @@ services:
         set -euo pipefail;
         for archive_dir in /archives/*/; do
             stem=$$(basename "$$archive_dir");
+            archive_path="/archives/$${stem}/$${stem}";
+
+            echo "INFO: --- $${stem} ---";
+            echo "INFO: archive contents:";
+            ls -lh "/archives/$${stem}/";
+
+            echo "INFO: archive bounds:";
+            pmdumplog -l "$${archive_path}" 2>&1;
+
             echo "INFO: loading $${stem} into pmseries";
-            if ! pmseries --load "/archives/$${stem}/$${stem}"; then
+            if ! pmseries --load "$${archive_path}"; then
                 echo "ERROR: pmseries --load failed for $${stem}";
                 exit 1;
             fi;
-            echo "INFO: $${stem} loaded";
+
+            echo "INFO: $${stem} loaded — verifying index:";
+            series_count=$$(pmseries 'kernel.all.cpu.user' 2>/dev/null | wc -l || echo 0);
+            echo "INFO: $${stem} — $${series_count} kernel.all.cpu.user series now in index";
         done;
         echo "INFO: all archives seeded";
     depends_on:
