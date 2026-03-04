@@ -96,35 +96,44 @@ Give me a summary of all services over the past 7 days, highlighting anything th
 
 ## Try It Out Locally
 
-No PCP infrastructure? No problem — the bundled compose stack spins up a fully functional
-PCP + Redis environment in under a minute.
+No PCP infrastructure? No problem. The bundled compose stack generates a week of
+realistic synthetic performance data — a SaaS production host with daily traffic
+patterns, morning ramps, lunch lulls, and periodic CPU/disk spikes — seeds it into
+pmproxy's time-series backend, and has everything ready for Claude to analyse.
 
-### 1. Start the test harness
-
-```bash
-docker compose up -d
-```
-
-This starts:
-- `quay.io/performancecopilot/pcp` — pmcd + pmproxy (port 44322)
-- `redis/redis-stack` — time-series backend for historical queries (port 6379)
-
-Wait ~10 seconds for pmproxy to initialise, then verify:
+### 1. Start the stack
 
 ```bash
-curl http://localhost:44322/series/query?expr=kernel.all.load
+podman compose up -d
 ```
 
-### 2. Build the pmmcp container
+This runs four services in order:
 
-> **Note:** The image is not yet published to a registry ([#1](https://github.com/anthropics/pmmcp/issues/1)).
-> Build it locally first.
+1. **pmlogsynth-generator** — generates PCP archives from `profiles/scenarios/saas-diurnal-week.yml`
+2. **redis-stack** — time-series backend (Valkey/Redis, port 6379)
+3. **pmlogsynth-seeder** — loads the archives into the time-series store
+4. **pcp** — pmcd + pmproxy, ready to serve queries (port 44322)
+
+The generator and seeder are one-shot jobs; allow ~30–60 seconds for them to complete
+before pmproxy is ready. Check progress with:
 
 ```bash
-docker build -t pmmcp .
+podman compose logs -f pmlogsynth-generator pmlogsynth-seeder
 ```
 
-### 3. Wire it up in Claude Code
+Once seeded, verify data is queryable:
+
+```bash
+curl -s "http://localhost:44322/series/query?expr=kernel.all.cpu.user" | head -c 200
+```
+
+### 2. Connect pmmcp to Claude Code
+
+Install pmmcp from source (one-time):
+
+```bash
+uv sync
+```
 
 Add this to `.mcp.json` in your project root (or `~/.claude/mcp.json` for global config):
 
@@ -132,22 +141,56 @@ Add this to `.mcp.json` in your project root (or `~/.claude/mcp.json` for global
 {
   "mcpServers": {
     "pmmcp": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "--name", "pmmcp", "pmmcp",
-               "--pmproxy-url", "http://host.docker.internal:44322"]
+      "command": "uv",
+      "args": ["run", "pmmcp", "--pmproxy-url", "http://localhost:44322"]
     }
   }
 }
 ```
 
-`host.docker.internal` resolves to your host machine from inside the container — the
-same host where the compose stack is listening on port 44322.
+Restart Claude Code (or run `/mcp` to reload) and confirm **pmmcp** appears in the
+connected servers list.
+
+### 3. Ask Claude to investigate
+
+The seeded dataset is `saas-prod-01` — a simulated production host with a week of
+realistic diurnal traffic. Try these to get a feel for what pmmcp can do:
+
+**Explore the data:**
+```
+What hosts and metrics are available?
+```
+
+**Spot the daily pattern:**
+```
+Show me CPU utilisation on saas-prod-01 over the past 7 days.
+Are there any recurring spikes?
+```
+
+**Drill into an incident:**
+```
+There's a CPU and disk spike that seems to happen every day on saas-prod-01.
+When exactly does it occur, how severe is it, and how long does it last?
+```
+
+**Compare periods:**
+```
+Compare the morning peak period to the overnight baseline on saas-prod-01.
+What's the magnitude of the difference across CPU, memory, disk, and network?
+```
+
+**Use a prompt template for guided investigation:**
+```
+/investigate_subsystem subsystem=cpu host=saas-prod-01
+```
 
 ### 4. Tear down when done
 
 ```bash
-docker compose down
+podman compose down --volumes
 ```
+
+`--volumes` purges the generated archive data so the next `up` starts fresh.
 
 ## Development Setup
 
