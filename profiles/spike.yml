@@ -1,0 +1,32 @@
+meta:
+  hostname: pmmcp-spike
+  timezone: UTC
+  duration: 3600
+  interval: 60
+  noise: 0.03
+
+host:
+  profile: generic-medium
+
+phases:
+  - name: baseline
+    duration: 3000
+    cpu:
+      utilization: 0.30
+      user_ratio: 0.70
+      sys_ratio: 0.20
+      iowait_ratio: 0.10
+    memory:
+      used_ratio: 0.60
+      cache_ratio: 0.20
+  - name: spike
+    duration: 600
+    transition: linear
+    cpu:
+      utilization: 0.90
+      user_ratio: 0.97
+      sys_ratio: 0.02
+      iowait_ratio: 0.01
+    memory:
+      used_ratio: 0.75
+      cache_ratio: 0.15

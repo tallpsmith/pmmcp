@@ -1,0 +1,27 @@
+meta:
+  hostname: pmmcp-steady-state
+  timezone: UTC
+  duration: 3600
+  interval: 60
+  noise: 0.05
+
+host:
+  profile: generic-medium
+
+phases:
+  - name: baseline
+    duration: 3600
+    cpu:
+      utilization: 0.30
+      user_ratio: 0.70
+      sys_ratio: 0.20
+      iowait_ratio: 0.10
+    memory:
+      used_ratio: 0.60
+      cache_ratio: 0.20
+    disk:
+      read_mbps: 10.0
+      write_mbps: 5.0
+    network:
+      rx_mbps: 20.0
+      tx_mbps: 5.0

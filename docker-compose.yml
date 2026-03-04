@@ -1,4 +1,50 @@
+volumes:
+  pmmcp-archives:
+
 services:
+  pmlogsynth-generator:
+    build: ./generator
+    volumes:
+      - ./profiles:/profiles:ro
+      - pmmcp-archives:/archives
+
+  redis-stack:
+    image: redis/redis-stack:latest
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  pmlogsynth-seeder:
+    image: quay.io/performancecopilot/pcp:latest
+    volumes:
+      - pmmcp-archives:/archives:ro
+    environment:
+      KEY_SERVERS: redis-stack:6379
+    command:
+      - bash
+      - -c
+      - |
+        set -euo pipefail;
+        for archive_dir in /archives/*/; do
+            stem=$$(basename "$$archive_dir");
+            echo "INFO: loading $${stem} into pmseries";
+            if ! pmseries --load "/archives/$${stem}/$${stem}"; then
+                echo "ERROR: pmseries --load failed for $${stem}";
+                exit 1;
+            fi;
+            echo "INFO: $${stem} loaded";
+        done;
+        echo "INFO: all archives seeded";
+    depends_on:
+      pmlogsynth-generator:
+        condition: service_completed_successfully
+      redis-stack:
+        condition: service_healthy
+
   pcp:
     image: quay.io/performancecopilot/pcp:latest
     privileged: true
@@ -7,9 +53,5 @@ services:
     environment:
       KEY_SERVERS: redis-stack:6379
     depends_on:
-      - redis-stack
-
-  redis-stack:
-    image: redis/redis-stack:latest
-    ports:
-      - "6379:6379"
+      pmlogsynth-seeder:
+        condition: service_completed_successfully
