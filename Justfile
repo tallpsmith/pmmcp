@@ -40,3 +40,4 @@ e2e:
         sleep 2; \
     done
     PMPROXY_URL=http://localhost:44322 uv run python -m pytest -m e2e -q
+    @echo "Stack still running — run 'podman compose down --volumes' to purge seeded data before next run"
