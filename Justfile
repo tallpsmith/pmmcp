@@ -23,3 +23,10 @@ fix:
 
 # All static quality checks (lint + format)
 check: lint format
+
+# Run unit + integration tests with coverage gate
+test:
+    uv run python -m pytest -m "not e2e" --cov=pmmcp --cov-fail-under=80 -q
+
+# Full local quality gate (check + test)
+ci: check test
