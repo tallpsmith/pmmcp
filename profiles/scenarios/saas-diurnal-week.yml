@@ -1,10 +1,10 @@
 meta:
   hostname: saas-prod-01
   timezone: UTC
-  duration: 604800
-  interval: 60
+  duration: 600600s
+  interval: 1m
   noise: 0.05
-  start: "2026-03-03T00:00:00Z"
+  start: "-7d"
 
 host:
   profile: generic-large
@@ -16,7 +16,7 @@ phases:
   # ───────────────────────────────────────────
 
   - name: day1-overnight
-    duration: 28800
+    duration: 8h
     cpu:
       utilization: 0.05
       user_ratio: 0.60
@@ -35,7 +35,7 @@ phases:
       tx_mbps: 3.0
 
   - name: day1-morning-ramp
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.55
@@ -55,7 +55,7 @@ phases:
       tx_mbps: 170.0
 
   - name: day1-morning-peak
-    duration: 7200
+    duration: 2h
     cpu:
       utilization: 0.72
       user_ratio: 0.65
@@ -74,7 +74,7 @@ phases:
       tx_mbps: 360.0
 
   - name: day1-lunch-lull
-    duration: 3600
+    duration: 1h
     transition: linear
     cpu:
       utilization: 0.35
@@ -94,7 +94,7 @@ phases:
       tx_mbps: 85.0
 
   - name: day1-afternoon-peak-1
-    duration: 6300
+    duration: 95m
     transition: linear
     cpu:
       utilization: 0.75
@@ -114,7 +114,7 @@ phases:
       tx_mbps: 375.0
 
   - name: day1-cpu-disk-spike
-    duration: 900
+    duration: 15m
     cpu:
       utilization: 0.92
       user_ratio: 0.50
@@ -133,7 +133,7 @@ phases:
       tx_mbps: 375.0
 
   - name: day1-afternoon-peak-2
-    duration: 3600
+    duration: 1h
     transition: linear
     cpu:
       utilization: 0.72
@@ -153,7 +153,7 @@ phases:
       tx_mbps: 350.0
 
   - name: day1-ramp-down
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.38
@@ -173,7 +173,7 @@ phases:
       tx_mbps: 130.0
 
   - name: day1-tail-off
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.12
@@ -193,7 +193,7 @@ phases:
       tx_mbps: 20.0
 
   - name: day1-minimal
-    duration: 14400
+    duration: 4h
     transition: linear
     cpu:
       utilization: 0.05
@@ -217,7 +217,7 @@ phases:
   # ───────────────────────────────────────────
 
   - name: day2-overnight
-    duration: 28800
+    duration: 8h
     transition: linear
     cpu:
       utilization: 0.05
@@ -237,7 +237,7 @@ phases:
       tx_mbps: 3.0
 
   - name: day2-morning-ramp
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.55
@@ -257,7 +257,7 @@ phases:
       tx_mbps: 170.0
 
   - name: day2-morning-peak
-    duration: 7200
+    duration: 2h
     cpu:
       utilization: 0.72
       user_ratio: 0.65
@@ -276,7 +276,7 @@ phases:
       tx_mbps: 360.0
 
   - name: day2-lunch-lull
-    duration: 3600
+    duration: 1h
     transition: linear
     cpu:
       utilization: 0.35
@@ -296,7 +296,7 @@ phases:
       tx_mbps: 85.0
 
   - name: day2-afternoon-peak-1
-    duration: 6300
+    duration: 95m
     transition: linear
     cpu:
       utilization: 0.75
@@ -316,7 +316,7 @@ phases:
       tx_mbps: 375.0
 
   - name: day2-cpu-disk-spike
-    duration: 900
+    duration: 15m
     cpu:
       utilization: 0.92
       user_ratio: 0.50
@@ -335,7 +335,7 @@ phases:
       tx_mbps: 375.0
 
   - name: day2-afternoon-peak-2
-    duration: 3600
+    duration: 1h
     transition: linear
     cpu:
       utilization: 0.72
@@ -355,7 +355,7 @@ phases:
       tx_mbps: 350.0
 
   - name: day2-ramp-down
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.38
@@ -375,7 +375,7 @@ phases:
       tx_mbps: 130.0
 
   - name: day2-tail-off
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.12
@@ -395,7 +395,7 @@ phases:
       tx_mbps: 20.0
 
   - name: day2-minimal
-    duration: 14400
+    duration: 4h
     transition: linear
     cpu:
       utilization: 0.05
@@ -419,7 +419,7 @@ phases:
   # ───────────────────────────────────────────
 
   - name: day3-overnight
-    duration: 28800
+    duration: 8h
     transition: linear
     cpu:
       utilization: 0.05
@@ -439,7 +439,7 @@ phases:
       tx_mbps: 3.0
 
   - name: day3-morning-ramp
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.55
@@ -459,7 +459,7 @@ phases:
       tx_mbps: 170.0
 
   - name: day3-morning-peak
-    duration: 7200
+    duration: 2h
     cpu:
       utilization: 0.72
       user_ratio: 0.65
@@ -478,7 +478,7 @@ phases:
       tx_mbps: 360.0
 
   - name: day3-lunch-lull
-    duration: 3600
+    duration: 1h
     transition: linear
     cpu:
       utilization: 0.35
@@ -498,7 +498,7 @@ phases:
       tx_mbps: 85.0
 
   - name: day3-afternoon-peak-1
-    duration: 6300
+    duration: 95m
     transition: linear
     cpu:
       utilization: 0.75
@@ -518,7 +518,7 @@ phases:
       tx_mbps: 375.0
 
   - name: day3-cpu-disk-spike
-    duration: 900
+    duration: 15m
     cpu:
       utilization: 0.92
       user_ratio: 0.50
@@ -537,7 +537,7 @@ phases:
       tx_mbps: 375.0
 
   - name: day3-afternoon-peak-2
-    duration: 3600
+    duration: 1h
     transition: linear
     cpu:
       utilization: 0.72
@@ -557,7 +557,7 @@ phases:
       tx_mbps: 350.0
 
   - name: day3-ramp-down
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.38
@@ -577,7 +577,7 @@ phases:
       tx_mbps: 130.0
 
   - name: day3-tail-off
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.12
@@ -597,7 +597,7 @@ phases:
       tx_mbps: 20.0
 
   - name: day3-minimal
-    duration: 14400
+    duration: 4h
     transition: linear
     cpu:
       utilization: 0.05
@@ -621,7 +621,7 @@ phases:
   # ───────────────────────────────────────────
 
   - name: day4-overnight
-    duration: 28800
+    duration: 8h
     transition: linear
     cpu:
       utilization: 0.05
@@ -641,7 +641,7 @@ phases:
       tx_mbps: 3.0
 
   - name: day4-morning-ramp
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.55
@@ -661,7 +661,7 @@ phases:
       tx_mbps: 170.0
 
   - name: day4-morning-peak
-    duration: 7200
+    duration: 2h
     cpu:
       utilization: 0.72
       user_ratio: 0.65
@@ -680,7 +680,7 @@ phases:
       tx_mbps: 360.0
 
   - name: day4-lunch-lull
-    duration: 3600
+    duration: 1h
     transition: linear
     cpu:
       utilization: 0.35
@@ -700,7 +700,7 @@ phases:
       tx_mbps: 85.0
 
   - name: day4-afternoon-peak-1
-    duration: 6300
+    duration: 95m
     transition: linear
     cpu:
       utilization: 0.75
@@ -720,7 +720,7 @@ phases:
       tx_mbps: 375.0
 
   - name: day4-cpu-disk-spike
-    duration: 900
+    duration: 15m
     cpu:
       utilization: 0.92
       user_ratio: 0.50
@@ -739,7 +739,7 @@ phases:
       tx_mbps: 375.0
 
   - name: day4-afternoon-peak-2
-    duration: 3600
+    duration: 1h
     transition: linear
     cpu:
       utilization: 0.72
@@ -759,7 +759,7 @@ phases:
       tx_mbps: 350.0
 
   - name: day4-ramp-down
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.38
@@ -779,7 +779,7 @@ phases:
       tx_mbps: 130.0
 
   - name: day4-tail-off
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.12
@@ -799,7 +799,7 @@ phases:
       tx_mbps: 20.0
 
   - name: day4-minimal
-    duration: 14400
+    duration: 4h
     transition: linear
     cpu:
       utilization: 0.05
@@ -823,7 +823,7 @@ phases:
   # ───────────────────────────────────────────
 
   - name: day5-overnight
-    duration: 28800
+    duration: 8h
     transition: linear
     cpu:
       utilization: 0.05
@@ -843,7 +843,7 @@ phases:
       tx_mbps: 3.0
 
   - name: day5-morning-ramp
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.55
@@ -863,7 +863,7 @@ phases:
       tx_mbps: 170.0
 
   - name: day5-morning-peak
-    duration: 7200
+    duration: 2h
     cpu:
       utilization: 0.72
       user_ratio: 0.65
@@ -882,7 +882,7 @@ phases:
       tx_mbps: 360.0
 
   - name: day5-lunch-lull
-    duration: 3600
+    duration: 1h
     transition: linear
     cpu:
       utilization: 0.35
@@ -902,7 +902,7 @@ phases:
       tx_mbps: 85.0
 
   - name: day5-afternoon-peak-1
-    duration: 6300
+    duration: 95m
     transition: linear
     cpu:
       utilization: 0.75
@@ -922,7 +922,7 @@ phases:
       tx_mbps: 375.0
 
   - name: day5-cpu-disk-spike
-    duration: 900
+    duration: 15m
     cpu:
       utilization: 0.92
       user_ratio: 0.50
@@ -941,7 +941,7 @@ phases:
       tx_mbps: 375.0
 
   - name: day5-afternoon-peak-2
-    duration: 3600
+    duration: 1h
     transition: linear
     cpu:
       utilization: 0.72
@@ -961,7 +961,7 @@ phases:
       tx_mbps: 350.0
 
   - name: day5-ramp-down
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.38
@@ -981,7 +981,7 @@ phases:
       tx_mbps: 130.0
 
   - name: day5-tail-off
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.12
@@ -1001,7 +1001,7 @@ phases:
       tx_mbps: 20.0
 
   - name: day5-minimal
-    duration: 14400
+    duration: 4h
     transition: linear
     cpu:
       utilization: 0.05
@@ -1025,7 +1025,7 @@ phases:
   # ───────────────────────────────────────────
 
   - name: day6-overnight
-    duration: 28800
+    duration: 8h
     transition: linear
     cpu:
       utilization: 0.05
@@ -1045,7 +1045,7 @@ phases:
       tx_mbps: 3.0
 
   - name: day6-morning-ramp
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.55
@@ -1065,7 +1065,7 @@ phases:
       tx_mbps: 170.0
 
   - name: day6-morning-peak
-    duration: 7200
+    duration: 2h
     cpu:
       utilization: 0.72
       user_ratio: 0.65
@@ -1084,7 +1084,7 @@ phases:
       tx_mbps: 360.0
 
   - name: day6-lunch-lull
-    duration: 3600
+    duration: 1h
     transition: linear
     cpu:
       utilization: 0.35
@@ -1104,7 +1104,7 @@ phases:
       tx_mbps: 85.0
 
   - name: day6-afternoon-peak-1
-    duration: 6300
+    duration: 95m
     transition: linear
     cpu:
       utilization: 0.75
@@ -1124,7 +1124,7 @@ phases:
       tx_mbps: 375.0
 
   - name: day6-cpu-disk-spike
-    duration: 900
+    duration: 15m
     cpu:
       utilization: 0.92
       user_ratio: 0.50
@@ -1143,7 +1143,7 @@ phases:
       tx_mbps: 375.0
 
   - name: day6-afternoon-peak-2
-    duration: 3600
+    duration: 1h
     transition: linear
     cpu:
       utilization: 0.72
@@ -1163,7 +1163,7 @@ phases:
       tx_mbps: 350.0
 
   - name: day6-ramp-down
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.38
@@ -1183,7 +1183,7 @@ phases:
       tx_mbps: 130.0
 
   - name: day6-tail-off
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.12
@@ -1203,7 +1203,7 @@ phases:
       tx_mbps: 20.0
 
   - name: day6-minimal
-    duration: 14400
+    duration: 4h
     transition: linear
     cpu:
       utilization: 0.05
@@ -1227,7 +1227,7 @@ phases:
   # ───────────────────────────────────────────
 
   - name: day7-overnight
-    duration: 28800
+    duration: 8h
     transition: linear
     cpu:
       utilization: 0.05
@@ -1247,7 +1247,7 @@ phases:
       tx_mbps: 3.0
 
   - name: day7-morning-ramp
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.55
@@ -1267,7 +1267,7 @@ phases:
       tx_mbps: 170.0
 
   - name: day7-morning-peak
-    duration: 7200
+    duration: 2h
     cpu:
       utilization: 0.72
       user_ratio: 0.65
@@ -1286,7 +1286,7 @@ phases:
       tx_mbps: 360.0
 
   - name: day7-lunch-lull
-    duration: 3600
+    duration: 1h
     transition: linear
     cpu:
       utilization: 0.35
@@ -1306,7 +1306,7 @@ phases:
       tx_mbps: 85.0
 
   - name: day7-afternoon-peak-1
-    duration: 6300
+    duration: 95m
     transition: linear
     cpu:
       utilization: 0.75
@@ -1326,7 +1326,7 @@ phases:
       tx_mbps: 375.0
 
   - name: day7-cpu-disk-spike
-    duration: 900
+    duration: 15m
     cpu:
       utilization: 0.92
       user_ratio: 0.50
@@ -1345,7 +1345,7 @@ phases:
       tx_mbps: 375.0
 
   - name: day7-afternoon-peak-2
-    duration: 3600
+    duration: 1h
     transition: linear
     cpu:
       utilization: 0.72
@@ -1365,7 +1365,7 @@ phases:
       tx_mbps: 350.0
 
   - name: day7-ramp-down
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.38
@@ -1385,7 +1385,7 @@ phases:
       tx_mbps: 130.0
 
   - name: day7-tail-off
-    duration: 7200
+    duration: 2h
     transition: linear
     cpu:
       utilization: 0.12
@@ -1405,7 +1405,7 @@ phases:
       tx_mbps: 20.0
 
   - name: day7-minimal
-    duration: 14400
+    duration: 4h
     transition: linear
     cpu:
       utilization: 0.05
