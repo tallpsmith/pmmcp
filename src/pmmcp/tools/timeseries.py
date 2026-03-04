@@ -210,6 +210,8 @@ async def pcp_fetch_timeseries(
 ) -> dict:
     """Fetch historical time-series values for one or more metrics over a time window.
 
+    Use for targeted drill-down after anomalies are identified — fetch only the
+    specific metrics confirmed as anomalous by pcp_detect_anomalies or pcp_scan_changes.
     Supports the hierarchical sampling strategy: start with wide windows and coarse
     intervals, then drill down to interesting periods at finer granularity.
     The 'auto' interval selects granularity based on window size.
@@ -223,7 +225,8 @@ async def pcp_fetch_timeseries(
         interval: Sampling interval (e.g., '15s', '5min', '1hour') or 'auto'
         host: Target hostname or glob (empty queries all hosts)
         instances: Filter to specific instances (empty means all)
-        limit: Maximum data points per metric/instance (default 500)
+        limit: Maximum data points per metric/instance (default 500).
+            For exploration use 50; increase for full dataset analysis.
         offset: Pagination offset
         zone: Timezone for timestamps
     """
@@ -260,7 +263,8 @@ async def pcp_query_series(
         start: Start time
         end: End time
         interval: Sampling interval or 'auto'
-        limit: Max data points per series
+        limit: Max data points per series.
+            For exploration use 50; increase for full dataset analysis.
         offset: Pagination offset
     """
     return await _query_series_impl(

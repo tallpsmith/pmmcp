@@ -114,6 +114,7 @@ async def pcp_detect_anomalies(
 ) -> dict | list:
     """Detect anomalies by comparing recent metric behavior to a historical baseline.
 
+    Start here. Recommended first tool at the start of any investigation.
     Fetches each metric over two windows — a short recent window and a longer
     historical baseline — then computes a z-score to quantify how far the recent
     behavior deviates from the baseline distribution.

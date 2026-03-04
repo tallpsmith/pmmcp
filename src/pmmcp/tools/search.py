@@ -76,7 +76,8 @@ async def pcp_search(
     Args:
         query: Free-text search query
         type: Result type filter: 'all', 'metric', 'indom', or 'instance'
-        limit: Maximum results (1-100)
+        limit: Maximum results (1-100).
+            For exploration use 50; increase to 100+ for full corpus.
         offset: Pagination offset
     """
     return await _search_impl(get_client(), query=query, type=type, limit=limit, offset=offset)

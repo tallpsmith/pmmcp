@@ -73,7 +73,8 @@ async def pcp_get_hosts(match: str = "", limit: int = 50, offset: int = 0) -> di
 
     Args:
         match: Glob pattern to filter hostnames (e.g., 'web-*')
-        limit: Maximum number of hosts to return (1-1000)
+        limit: Maximum number of hosts to return (1-1000).
+            For exploration use 50; increase for full dataset analysis.
         offset: Pagination offset
     """
     return await _get_hosts_impl(get_client(), match=match, limit=limit, offset=offset)

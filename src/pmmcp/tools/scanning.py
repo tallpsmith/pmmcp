@@ -126,7 +126,8 @@ async def pcp_scan_changes(
         comparison_start: Start of the comparison window
         comparison_end: End of the comparison window
         ratio_threshold: Ratio of comparison/baseline mean to flag as changed (default 1.5)
-        max_metrics: Maximum number of changed metrics to return (default 50)
+        max_metrics: Maximum number of changed metrics to return (default 50).
+            For exploration use 50; increase to 200+ for full scan.
         interval: Sampling interval ('auto' selects based on baseline window duration)
     """
     return await _scan_changes_impl(

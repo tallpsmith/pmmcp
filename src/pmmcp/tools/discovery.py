@@ -177,7 +177,8 @@ async def pcp_discover_metrics(
             Mutually exclusive with 'search'.
         search: Full-text search query across metric names and descriptions.
             Mutually exclusive with 'prefix'.
-        limit: Maximum number of metrics to return (1-1000)
+        limit: Maximum number of metrics to return (1-1000).
+            For exploration use 50; increase to 200+ for analysis.
         offset: Pagination offset
     """
     return await _discover_metrics_impl(
