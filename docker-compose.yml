@@ -5,7 +5,7 @@ services:
   pmlogsynth-generator:
     build: ./generator
     volumes:
-      - ./profiles:/profiles:ro
+      - ${PROFILES_DIR:-./profiles/e2e}:/profiles:ro
       - pmmcp-archives:/archives
 
   redis-stack:
