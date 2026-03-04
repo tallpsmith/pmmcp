@@ -206,6 +206,8 @@ The check runs in order: lint → format → unit+integration tests (≥80% cove
 - Python 3.11+ + `mcp[cli]` ≥1.26.0 (FastMCP + ClientSession), `anyio` (memory streams), `respx` (already present — mocks httpx for integration tier), `pytest-asyncio` (already present) (002-add-integration-e2e-tests)
 - Python 3.8+ (pmlogsynth), Python 3.11 (pmmcp) + pmlogsynth (`git+https://github.com/tallpsmith/pmlogsynth`), (004-pmlogsynth-integration)
 - Named volume `pmmcp-archives` (ephemeral; purged on `compose down --volumes`) (004-pmlogsynth-integration)
+- Python 3.11+ + `mcp[cli]` ≥1.2.0 (FastMCP), `pydantic` v2.x (005-investigation-ux)
+- N/A — no data storage (005-investigation-ux)
 
 ## Recent Changes
 - 002-add-integration-e2e-tests: Added Python 3.11+ + `mcp[cli]` ≥1.26.0 (FastMCP + ClientSession), `anyio` (memory streams), `respx` (already present — mocks httpx for integration tier), `pytest-asyncio` (already present)
