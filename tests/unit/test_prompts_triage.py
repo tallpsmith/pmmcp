@@ -143,3 +143,88 @@ def test_discovery_first_instruction_present():
     result = _incident_triage_impl(symptom="memory leak suspected")
     full_text = " ".join(msg["content"] for msg in result)
     assert "discover" in full_text.lower() or "pcp_discover_metrics" in full_text
+
+
+# ---------------------------------------------------------------------------
+# US2: Explicit 4-step investigation sequence (T007)
+# These tests describe the rewritten prompt — MUST FAIL before implementation.
+# ---------------------------------------------------------------------------
+
+
+def test_four_step_sequence_present():
+    """All four investigation tools are named in the triage content."""
+    result = _incident_triage_impl(symptom="high CPU load")
+    full_text = " ".join(msg["content"] for msg in result)
+    assert "pcp_detect_anomalies" in full_text, "Step 1 tool missing"
+    assert "pcp_compare_windows" in full_text, "Step 2 tool missing"
+    assert "pcp_scan_changes" in full_text, "Step 3 tool missing"
+    assert "pcp_fetch_timeseries" in full_text, "Step 4 tool missing"
+
+
+def test_anomaly_detection_is_first_step():
+    """pcp_detect_anomalies is named as Step 1 of the investigation sequence."""
+    result = _incident_triage_impl(symptom="high CPU load")
+    full_text = " ".join(msg["content"] for msg in result)
+    step1_pos = full_text.find("Step 1")
+    step2_pos = full_text.find("Step 2")
+    anomaly_pos = full_text.find("pcp_detect_anomalies")
+    assert step1_pos != -1, "Step 1 marker missing"
+    assert anomaly_pos != -1, "pcp_detect_anomalies missing"
+    assert step1_pos < anomaly_pos < step2_pos, (
+        "pcp_detect_anomalies should appear between Step 1 and Step 2 markers"
+    )
+
+
+def test_window_comparison_is_second_step():
+    """pcp_compare_windows is named as Step 2 of the investigation sequence."""
+    result = _incident_triage_impl(symptom="high CPU load")
+    full_text = " ".join(msg["content"] for msg in result)
+    step2_pos = full_text.find("Step 2")
+    step3_pos = full_text.find("Step 3")
+    compare_pos = full_text.find("pcp_compare_windows")
+    assert step2_pos != -1, "Step 2 marker missing"
+    assert compare_pos != -1, "pcp_compare_windows missing"
+    assert step2_pos < compare_pos < step3_pos, (
+        "pcp_compare_windows should appear between Step 2 and Step 3 markers"
+    )
+
+
+def test_scan_changes_is_third_step():
+    """pcp_scan_changes is named as Step 3 of the investigation sequence."""
+    result = _incident_triage_impl(symptom="high CPU load")
+    full_text = " ".join(msg["content"] for msg in result)
+    step3_pos = full_text.find("Step 3")
+    step4_pos = full_text.find("Step 4")
+    scan_pos = full_text.find("pcp_scan_changes")
+    assert step3_pos != -1, "Step 3 marker missing"
+    assert scan_pos != -1, "pcp_scan_changes missing"
+    assert step3_pos < scan_pos < step4_pos, (
+        "pcp_scan_changes should appear between Step 3 and Step 4 markers"
+    )
+
+
+def test_targeted_drilldown_is_fourth_step():
+    """pcp_fetch_timeseries is named as Step 4 (targeted drilldown)."""
+    result = _incident_triage_impl(symptom="high CPU load")
+    full_text = " ".join(msg["content"] for msg in result)
+    step4_pos = full_text.find("Step 4")
+    ts_pos = full_text.find("pcp_fetch_timeseries", step4_pos)
+    assert step4_pos != -1, "Step 4 marker missing"
+    assert ts_pos != -1, "pcp_fetch_timeseries not found after Step 4 marker"
+
+
+def test_step_transitions_use_qualitative_language():
+    """Step transitions use qualitative criteria, not numeric thresholds.
+
+    Requires the 4-step sequence to be present — fails if sequence is absent.
+    """
+    result = _incident_triage_impl(symptom="high CPU load")
+    full_text = " ".join(msg["content"] for msg in result)
+    # Prerequisite: the 4-step sequence must be in place
+    assert "pcp_compare_windows" in full_text, (
+        "4-step sequence must be present to validate transition language"
+    )
+    # Transitions must be qualitative ("if anomalies found"), not numeric thresholds
+    assert "if anomal" in full_text.lower() or "when anomal" in full_text.lower(), (
+        "Step transitions should use qualitative language e.g. 'if anomalies found'"
+    )
