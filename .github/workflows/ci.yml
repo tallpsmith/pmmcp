@@ -115,7 +115,7 @@ jobs:
         run: uv sync --extra dev
 
       - name: Start E2E services
-        run: docker compose up -d --wait --wait-timeout 120
+        run: PROFILES_DIR=./profiles/e2e docker compose up -d --wait --wait-timeout 120
 
       - name: Wait for pmproxy
         run: |
