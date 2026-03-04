@@ -22,20 +22,23 @@ services:
     image: quay.io/performancecopilot/pcp:latest
     volumes:
       - pmmcp-archives:/archives:ro
-    command: >
-      bash -c "
+    environment:
+      KEY_SERVERS: redis-stack:6379
+    command:
+      - bash
+      - -c
+      - |
         set -euo pipefail;
         for archive_dir in /archives/*/; do
-            stem=\$(basename \"\$archive_dir\");
-            echo \"INFO: loading \${stem} into pmseries\";
-            if ! pmseries --load \"/archives/\${stem}/\${stem}\"; then
-                echo \"ERROR: pmseries --load failed for \${stem}\";
+            stem=$$(basename "$$archive_dir");
+            echo "INFO: loading $${stem} into pmseries";
+            if ! pmseries --load "/archives/$${stem}/$${stem}"; then
+                echo "ERROR: pmseries --load failed for $${stem}";
                 exit 1;
             fi;
-            echo \"INFO: \${stem} loaded\";
+            echo "INFO: $${stem} loaded";
         done;
-        echo \"INFO: all archives seeded\";
-      "
+        echo "INFO: all archives seeded";
     depends_on:
       pmlogsynth-generator:
         condition: service_completed_successfully
