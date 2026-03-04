@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-for profile in /profiles/*.yml; do
-    stem=$(basename "${profile}" .yml)
+for profile in /profiles/*.yml /profiles/*.yaml; do
+    [[ -f "${profile}" ]] || continue
+    stem=$(basename "${profile}")
+    stem="${stem%.yml}"
+    stem="${stem%.yaml}"
     mkdir -p "/archives/${stem}"
     echo "INFO: generating archive for ${profile} → /archives/${stem}/${stem}"
     if ! pmlogsynth -o "/archives/${stem}/${stem}" "${profile}"; then
