@@ -61,15 +61,15 @@ async def test_detect_anomalies_survives_forced_tiny_batches(e2e_batched_session
 
 @pytest.mark.e2e
 async def test_compare_windows_survives_forced_tiny_batches(e2e_batched_session):
-    """pcp_compare_windows succeeds with kernel.percpu.cpu.* under batch size=2."""
+    """pcp_compare_windows succeeds with kernel.percpu.cpu.user under batch size=2."""
     result = await e2e_batched_session.call_tool(
         "pcp_compare_windows",
         {
-            "metrics": ["kernel.percpu.cpu.user"],
-            "baseline_start": "-60minutes",
-            "baseline_end": "-10minutes",
-            "comparison_start": "-10minutes",
-            "comparison_end": "now",
+            "names": ["kernel.percpu.cpu.user"],
+            "window_a_start": "-60minutes",
+            "window_a_end": "-10minutes",
+            "window_b_start": "-10minutes",
+            "window_b_end": "now",
             "interval": "1minute",
         },
     )
