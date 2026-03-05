@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import asyncio
 import logging
+import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
 from mcp.server.fastmcp import FastMCP
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
 
+from pmmcp import __version__
 from pmmcp.client import PmproxyClient
 
 if TYPE_CHECKING:
@@ -26,21 +31,78 @@ def get_client() -> PmproxyClient:
     return _client
 
 
+async def _health_monitor(client: PmproxyClient, config) -> None:
+    """Background task: probe pmproxy and log health state on each interval."""
+    health_logger = logging.getLogger("pmmcp.health")
+    url = str(config.url)
+    while True:
+        ok, error = await client.probe()
+        if ok:
+            health_logger.info("pmproxy healthy (url=%s)", url)
+        else:
+            health_logger.warning("pmproxy unreachable (url=%s, error=%s)", url, error)
+        await asyncio.sleep(config.health_interval)
+
+
 @asynccontextmanager
 async def _lifespan(app: FastMCP) -> AsyncIterator[None]:
     global _client
     assert _config is not None, "Config not set — call server._config = ... before mcp.run()"
     _client = PmproxyClient(_config)
     logger.info("pmmcp starting, pmproxy URL: %s", _config.url)
+    monitor_task = asyncio.create_task(_health_monitor(_client, _config))
     try:
         yield
     finally:
+        monitor_task.cancel()
+        try:
+            await monitor_task
+        except asyncio.CancelledError:
+            pass
         await _client.close()
         _client = None
         logger.info("pmmcp shutting down")
 
 
 mcp = FastMCP("pmmcp", lifespan=_lifespan)
+
+
+async def _healthcheck_impl(client: PmproxyClient) -> Response:
+    """Pure healthcheck logic — testable without a live HTTP request."""
+    t0 = time.monotonic()
+    ok, error = await client.probe()
+    latency_ms = round((time.monotonic() - t0) * 1000, 1)
+
+    pmproxy_url = str(client._config.url)
+
+    if ok:
+        return JSONResponse(
+            {
+                "status": "ok",
+                "pmproxy_url": pmproxy_url,
+                "connection_ok": True,
+                "pmmcp_version": __version__,
+                "probe_latency_ms": latency_ms,
+            },
+            status_code=200,
+        )
+
+    return JSONResponse(
+        {
+            "status": "error",
+            "pmproxy_url": pmproxy_url,
+            "connection_ok": False,
+            "error": error,
+            "pmmcp_version": __version__,
+        },
+        status_code=503,
+    )
+
+
+@mcp.custom_route("/healthcheck", methods=["GET"])
+async def healthcheck(request: Request) -> Response:
+    return await _healthcheck_impl(get_client())
+
 
 # Side-effect imports: triggers @mcp.tool registration for all tool modules.
 # This import MUST be at the bottom to avoid circular import issues.

@@ -251,3 +251,24 @@ class PmproxyClient:
         params = {"name": name, "expr": expr}
         response = await self._pmapi_get("/pmapi/derive", params, host)
         return response.json()
+
+    # ── Health ──────────────────────────────────────────────────────────────
+
+    async def probe(self) -> tuple[bool, str | None]:
+        """Lightweight connectivity check — returns (True, None) if pmproxy responds."""
+        try:
+            response = await self._client.get(
+                "/series/sources",
+                params={"match": "*"},
+                timeout=5.0,
+            )
+            response.raise_for_status()
+            return True, None
+        except (PmproxyConnectionError, PmproxyTimeoutError) as exc:
+            return False, str(exc)
+        except httpx.ConnectError as exc:
+            return False, str(exc)
+        except httpx.TimeoutException as exc:
+            return False, str(exc)
+        except httpx.HTTPStatusError as exc:
+            return False, str(exc)
