@@ -166,3 +166,22 @@ def test_all_4_prompts_registered():
         "fleet_health_check",
         "incident_triage",
     } <= prompts
+
+
+# ---------------------------------------------------------------------------
+# session_init (T003)
+# ---------------------------------------------------------------------------
+
+
+def test_session_init_registered():
+    """session_init prompt is registered with the MCP server."""
+    prompts = {p.name for p in srv.mcp._prompt_manager.list_prompts()}
+    assert "session_init" in prompts
+
+
+def test_session_init_returns_messages():
+    """session_init returns a non-empty, well-formed message list."""
+    result = asyncio.run(srv.mcp.get_prompt("session_init", {}))
+    assert result.messages, "Expected at least one message"
+    first = result.messages[0]
+    assert first.content.text, "First message content must be non-empty"

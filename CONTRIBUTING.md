@@ -5,25 +5,36 @@
 ```bash
 git clone <repository-url>
 cd pmmcp
+brew install just          # macOS — or: apt install just / cargo install just
 uv sync --extra dev
 ```
 
-## Local quality gate
-
-Before pushing, run the pre-commit gate — it mirrors CI exactly:
+## Daily dev commands
 
 ```bash
-./pre-commit.sh
+just lint       # run linter
+just format     # check formatting
+just fix        # auto-fix lint + format issues
+just check      # lint + format (static quality gate)
+just test       # unit + integration tests (coverage ≥80%)
+just e2e        # spin up podman stack and run E2E tests
+just ci         # full local quality gate (check + test)
 ```
 
-Runs in order: dependency sync, lint, format check, unit + integration tests (≥80%
-coverage), and E2E tests if `PMPROXY_URL` is set.
+`just` with no arguments lists all available recipes.
 
-To run E2E tests against the local compose stack:
+## Local quality gate
+
+Before pushing, run the quality gate — it mirrors CI exactly:
 
 ```bash
-PROFILES_DIR=./profiles/e2e podman compose up -d
-PMPROXY_URL=http://localhost:44322 ./pre-commit.sh
+just ci
+```
+
+To include E2E tests:
+
+```bash
+just e2e
 ```
 
 ## Test structure
@@ -40,6 +51,6 @@ tests — discuss failures before removing anything.
 ## PR conventions
 
 - One logical change per PR; commit in small, focused chunks
-- `feat:`, `fix:`, `test:`, `docs:`, `refactor:` prefixes on commit messages
+- `feat:`, `fix:`, `test:`, `docs:`, `chore:`, `refactor:` prefixes on commit messages
 - Focus commit messages on *why*, not *what*
-- Run `./pre-commit.sh` and confirm it exits 0 before opening a PR
+- Run `just ci` and confirm it exits 0 before opening a PR

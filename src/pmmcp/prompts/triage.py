@@ -53,15 +53,14 @@ Scope: {host_clause}{timerange_clause}
 
 ## Guard Clauses — Check Before Proceeding
 
-1. **Missing tool abort**: If any required tool (pcp_get_hosts, pcp_discover_metrics, \
-pcp_fetch_timeseries, pcp_query_series, pcp_fetch_live) is missing or unavailable, stop \
+1. **Missing tool abort**: If any required tool is missing or unavailable, stop \
 immediately and report which tool is absent. Do not attempt the triage without it.
 
 2. **Out-of-retention — stop**: If the requested timerange falls outside the pmproxy \
 retention window, stop and suggest a shorter, more recent timerange. Do not attempt to \
 fetch data beyond the retention boundary.
 
-## Step 1 — Interpret Symptom and Identify Likely Subsystems
+## Preparation — Interpret Symptom and Confirm Scope
 
 {_SYMPTOM_MAP}
 
@@ -70,50 +69,61 @@ If the symptom is unmappable or ambiguous, proceed with a general sweep across a
 subsystems (cpu, memory, disk, network, process) and note in your report that a full \
 sweep was performed due to ambiguous symptom.
 
-## Step 2 — Scope Confirmation: Host-Specific vs Fleet-Wide
-
-1. Call `pcp_get_hosts` to enumerate all monitored hosts.
-2. If `host` was specified, confirm it is registered. If not found, report and stop.
-3. Check whether the anomaly is **host-specific** or **fleet-wide**:
-   - Start with the specified host (if provided) — investigate it first.
-   - Then check 2–3 other hosts in the fleet to determine if the issue is isolated.
-   - Report clearly: "Issue appears host-specific to <host>" or "Issue is fleet-wide \
-(observed on N hosts)".
-4. If no host was specified, begin fleet-wide and identify which hosts show the anomaly.
-
-Do not drill into root cause until you have determined the scope.
-
-## Step 3 — Discovery First
+Use `pcp_get_hosts` to enumerate all monitored hosts. If `host` was specified, confirm \
+it is registered. Check whether the issue is **host-specific** or **fleet-wide** by \
+examining the specified host first, then 2–3 others. Report clearly before proceeding.
 
 Use `pcp_discover_metrics` to enumerate available metrics in the target subsystems. \
-Do not assume metric names — discover what is actually present.
-
-Use `pcp_search` to find additional relevant metrics by keyword. \
-Use `pcp_get_metric_info` to check semantics (counter vs instant) before fetching.
+Do not assume metric names — discover what is actually present. Use `pcp_search` to find \
+additional relevant metrics by keyword. Use `pcp_get_metric_info` to check semantics \
+(counter vs instant) before fetching.
 
 **No-metrics-found — stop**: If no metrics are found for a targeted subsystem, report \
-"no metrics found for this subsystem" and stop. Do not silently fall back or proceed \
-with empty data.
+"no metrics found for this subsystem" and stop.
 
-## Step 4 — Rapid Broad Assessment
+## Investigation Sequence
 
-Start with a coarse window to identify *when* the problem began:
-- Fetch the last hour at `5min` intervals to spot the anomaly onset and affected hosts.
-- Once the problem window is identified, **drill down** at finer intervals (e.g., peak \
-15 minutes at `15s`) on the affected host(s) and subsystems.
-- Do not start with 15-second intervals over a long window — that produces noise.
+Execute these four steps in order. Each step informs the next.
 
-## Step 5 — Root Cause Correlation
+## Step 1 — Anomaly Detection
 
-Correlate across subsystems:
-- CPU saturation often drives disk I/O wait and network latency.
-- Memory pressure causes swap activity which manifests as disk I/O.
-- Network bandwidth saturation can cause application timeout symptoms.
-- High process count or runaway processes drive CPU and memory consumption.
+Run `pcp_detect_anomalies` on the target metrics across the recent window versus a \
+historical baseline. Use a baseline window at least 4× the length of the recent window \
+(e.g., recent = last 1 hour, baseline = last 7 days). Cover all subsystems identified \
+in the preparation phase.
 
-Report correlated findings together rather than as isolated observations.
+If anomalies are found, proceed to Step 2. If no anomalies are detected, report \
+"no baseline deviation found" and stop — do not continue to drilldown.
 
-## Step 6 — Findings and Recommended Actions
+## Step 2 — Compare Windows
+
+If anomalies are found in Step 1, call `pcp_compare_windows` to compare a known-good \
+baseline window against the anomalous window. This quantifies the magnitude of change \
+and identifies which metrics degraded most.
+
+If significant differences are found, proceed to Step 3 to scan for broader changes. \
+If differences are minimal, report findings and stop.
+
+## Step 3 — Scan for Broader Changes
+
+Call `pcp_scan_changes` across the affected metric namespace prefix \
+(e.g., `kernel`, `mem`, `disk`, `network`) to discover any other metrics that changed \
+between the good and bad windows. This surfaces correlated changes not captured in \
+the initial anomaly detection.
+
+Correlate across subsystems: CPU saturation drives disk I/O wait; memory pressure causes \
+swap activity which manifests as disk I/O; network saturation causes application timeouts; \
+runaway processes drive CPU and memory together.
+
+Proceed to Step 4 only for the specific metrics confirmed as anomalous.
+
+## Step 4 — Targeted Drilldown
+
+Call `pcp_fetch_timeseries` **only** on the metrics confirmed as anomalous in Steps 1–3. \
+Do not run timeseries fetch on all metrics. Start with a coarse interval to identify \
+when the problem began, then drill down to finer granularity on the affected window.
+
+## Findings
 
 Report as:
 1. **Incident scope** — host-specific or fleet-wide, affected hosts
@@ -121,7 +131,7 @@ Report as:
 3. **Contributing factors** — secondary anomalies correlated with the primary
 4. **Timeline** — when the anomaly began and its trajectory
 5. **Recommended immediate actions** — what to do right now to reduce impact
-6. **Escalation path** — if the root cause cannot be identified from metrics alone
+6. **Escalation path** — if root cause cannot be identified from metrics alone
 """
 
     return [{"role": "user", "content": content}]

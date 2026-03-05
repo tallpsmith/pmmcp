@@ -1,5 +1,9 @@
 # pmmcp — PCP MCP Service
 
+<p align="center">
+  <img src="logo.jpg" width="700">
+</p>
+
 An [MCP](https://modelcontextprotocol.io) server that exposes [Performance Co-Pilot (PCP)](https://pcp.io) metrics to AI agents via [pmproxy](https://man7.org/linux/man-pages/man1/pmproxy.1.html). Enables Claude and other LLMs to query live and historical performance data from any PCP-monitored host.
 
 ## Try It Out Locally
