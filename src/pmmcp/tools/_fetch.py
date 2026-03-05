@@ -2,8 +2,19 @@
 
 from __future__ import annotations
 
+import os
+from collections.abc import Iterator
+
 from pmmcp.client import PmproxyClient, PmproxyConnectionError, PmproxyError, PmproxyTimeoutError
 from pmmcp.utils import expand_time_units
+
+_SERIES_BATCH_SIZE = int(os.getenv("PMMCP_SERIES_BATCH_SIZE", "20"))
+
+
+def _chunked(lst: list, size: int) -> Iterator[list]:
+    """Yield successive chunks of `size` from `lst`."""
+    for i in range(0, len(lst), size):
+        yield lst[i : i + size]
 
 
 async def _fetch_window(
@@ -29,21 +40,26 @@ async def _fetch_window(
     if isinstance(series_ids[0], dict):
         series_ids = list({entry["series"] for entry in series_ids})
 
-    try:
-        raw_values = await client.series_values(
-            series=series_ids,
-            start=expand_time_units(start),
-            finish=expand_time_units(end),
-            interval=interval,
-            samples=limit,
-        )
-    except (PmproxyConnectionError, PmproxyTimeoutError, PmproxyError):
-        raise
+    raw_values: list[dict] = []
+    for batch in _chunked(series_ids, _SERIES_BATCH_SIZE):
+        try:
+            batch_values = await client.series_values(
+                series=batch,
+                start=expand_time_units(start),
+                finish=expand_time_units(end),
+                interval=interval,
+                samples=limit,
+            )
+            raw_values.extend(batch_values)
+        except (PmproxyConnectionError, PmproxyTimeoutError, PmproxyError):
+            raise
 
     # Get metric names for series IDs
     name_by_series: dict[str, str] = {}
     try:
-        labels_list = await client.series_labels(series_ids)
+        labels_list: list[dict] = []
+        for batch in _chunked(series_ids, _SERIES_BATCH_SIZE):
+            labels_list.extend(await client.series_labels(batch))
         for item in labels_list:
             metric_name = item.get("labels", {}).get("metric.name", "")
             if metric_name:
@@ -54,7 +70,9 @@ async def _fetch_window(
     # Get instance names
     instance_name_by_series: dict[str, str] = {}
     try:
-        instances_list = await client.series_instances(series_ids)
+        instances_list: list[dict] = []
+        for batch in _chunked(series_ids, _SERIES_BATCH_SIZE):
+            instances_list.extend(await client.series_instances(batch))
         for item in instances_list:
             instance_name_by_series[item["series"]] = item.get("name", "")
     except PmproxyError:
