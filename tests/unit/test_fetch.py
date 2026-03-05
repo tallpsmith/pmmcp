@@ -75,9 +75,7 @@ async def test_fetch_window_batches_series_values_calls(config):
         values_route = respx.get(f"{PMPROXY_BASE}/series/values").mock(
             return_value=httpx.Response(200, json=[])
         )
-        respx.get(f"{PMPROXY_BASE}/series/labels").mock(
-            return_value=httpx.Response(200, json=[])
-        )
+        respx.get(f"{PMPROXY_BASE}/series/labels").mock(return_value=httpx.Response(200, json=[]))
         respx.get(f"{PMPROXY_BASE}/series/instances").mock(
             return_value=httpx.Response(200, json=[])
         )
@@ -115,12 +113,8 @@ async def test_fetch_window_single_batch_unchanged(config):
     values_route = respx.get(f"{PMPROXY_BASE}/series/values").mock(
         return_value=httpx.Response(200, json=[])
     )
-    respx.get(f"{PMPROXY_BASE}/series/labels").mock(
-        return_value=httpx.Response(200, json=[])
-    )
-    respx.get(f"{PMPROXY_BASE}/series/instances").mock(
-        return_value=httpx.Response(200, json=[])
-    )
+    respx.get(f"{PMPROXY_BASE}/series/labels").mock(return_value=httpx.Response(200, json=[]))
+    respx.get(f"{PMPROXY_BASE}/series/instances").mock(return_value=httpx.Response(200, json=[]))
 
     from pmmcp.tools._fetch import _fetch_window
 
@@ -164,9 +158,7 @@ async def test_fetch_window_batch_error_propagates(config):
             return_value=httpx.Response(200, json=SERIES_IDS)
         )
         respx.get(f"{PMPROXY_BASE}/series/values").mock(side_effect=values_side_effect)
-        respx.get(f"{PMPROXY_BASE}/series/labels").mock(
-            return_value=httpx.Response(200, json=[])
-        )
+        respx.get(f"{PMPROXY_BASE}/series/labels").mock(return_value=httpx.Response(200, json=[]))
         respx.get(f"{PMPROXY_BASE}/series/instances").mock(
             return_value=httpx.Response(200, json=[])
         )
