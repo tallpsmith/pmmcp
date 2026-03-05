@@ -112,8 +112,10 @@ async def pcp_compare_windows(
 ) -> dict | list:
     """Fetch the same metrics over two time windows and return summary statistics with deltas.
 
-    Designed for 'good period vs bad period' comparison. Returns mean, min, max, p95, stddev
-    for each window with absolute/percentage deltas and a significance flag (> 2 stddev).
+    For comparing specific metrics across known windows. For discovery, start with
+    pcp_quick_investigate. Designed for 'good period vs bad period' comparison. Returns
+    mean, min, max, p95, stddev for each window with absolute/percentage deltas and a
+    significance flag (> 2 stddev).
 
     Args:
         names: List of metric names to compare

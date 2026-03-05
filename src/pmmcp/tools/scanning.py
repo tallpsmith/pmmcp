@@ -116,8 +116,10 @@ async def pcp_scan_changes(
 ) -> dict | list:
     """Scan a metric namespace for significant changes between two time windows.
 
-    Inspired by pmdiff — discovers all metrics under a prefix, fetches both
-    windows, and returns those whose mean changed by more than ratio_threshold.
+    For scanning broad changes in a metric prefix. For discovery, start with
+    pcp_quick_investigate. Inspired by pmdiff — discovers all metrics under a
+    prefix, fetches both windows, and returns those whose mean changed by more
+    than ratio_threshold.
 
     Args:
         metric_prefix: Metric namespace prefix to scan (e.g. 'kernel', 'mem')

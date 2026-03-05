@@ -210,11 +210,13 @@ async def pcp_fetch_timeseries(
 ) -> dict:
     """Fetch historical time-series values for one or more metrics over a time window.
 
-    Use for targeted drill-down after anomalies are identified — fetch only the
-    specific metrics confirmed as anomalous by pcp_detect_anomalies or pcp_scan_changes.
-    Supports the hierarchical sampling strategy: start with wide windows and coarse
-    intervals, then drill down to interesting periods at finer granularity.
-    The 'auto' interval selects granularity based on window size.
+    For targeted retrieval of a specific metric. NOT for exploratory investigation —
+    use pcp_quick_investigate for discovery. Use for targeted drill-down after
+    anomalies are identified — fetch only the specific metrics confirmed as anomalous
+    by pcp_detect_anomalies or pcp_scan_changes. Supports the hierarchical sampling
+    strategy: start with wide windows and coarse intervals, then drill down to
+    interesting periods at finer granularity. The 'auto' interval selects granularity
+    based on window size.
 
     Auto-interval mapping: <=1h->15s, <=24h->5min, <=7d->1hour, >7d->6hour
 
