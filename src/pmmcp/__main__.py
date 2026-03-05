@@ -22,6 +22,23 @@ def main() -> None:
         default=None,
         help="HTTP request timeout in seconds (default: 30.0)",
     )
+    parser.add_argument(
+        "--transport",
+        choices=["stdio", "streamable-http"],
+        default="stdio",
+        help="MCP transport (default: stdio)",
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Bind host for HTTP transport (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8080,
+        help="Bind port for HTTP transport (default: 8080)",
+    )
     args = parser.parse_args()
 
     import pmmcp.server as srv
@@ -33,7 +50,11 @@ def main() -> None:
     if args.timeout is not None:
         kwargs["timeout"] = args.timeout
     srv._config = PmproxyConfig(**kwargs)
-    srv.mcp.run(transport="stdio")
+
+    if args.transport == "streamable-http":
+        srv.mcp.run(transport="streamable-http", host=args.host, port=args.port)
+    else:
+        srv.mcp.run(transport="stdio")
 
 
 if __name__ == "__main__":
