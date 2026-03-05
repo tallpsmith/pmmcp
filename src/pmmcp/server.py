@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from collections.abc import AsyncIterator
@@ -30,15 +31,34 @@ def get_client() -> PmproxyClient:
     return _client
 
 
+async def _health_monitor(client: PmproxyClient, config) -> None:
+    """Background task: probe pmproxy and log health state on each interval."""
+    health_logger = logging.getLogger("pmmcp.health")
+    url = str(config.url)
+    while True:
+        ok, error = await client.probe()
+        if ok:
+            health_logger.info("pmproxy healthy (url=%s)", url)
+        else:
+            health_logger.warning("pmproxy unreachable (url=%s, error=%s)", url, error)
+        await asyncio.sleep(config.health_interval)
+
+
 @asynccontextmanager
 async def _lifespan(app: FastMCP) -> AsyncIterator[None]:
     global _client
     assert _config is not None, "Config not set — call server._config = ... before mcp.run()"
     _client = PmproxyClient(_config)
     logger.info("pmmcp starting, pmproxy URL: %s", _config.url)
+    monitor_task = asyncio.create_task(_health_monitor(_client, _config))
     try:
         yield
     finally:
+        monitor_task.cancel()
+        try:
+            await monitor_task
+        except asyncio.CancelledError:
+            pass
         await _client.close()
         _client = None
         logger.info("pmmcp shutting down")

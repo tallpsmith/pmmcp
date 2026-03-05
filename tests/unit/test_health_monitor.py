@@ -32,14 +32,14 @@ async def test_health_monitor_logs_info_when_healthy(caplog):
     client = _make_mock_client((True, None))
     config = _make_mock_config(health_interval=999)
 
-    # Run one iteration then cancel
-    task = asyncio.create_task(_health_monitor(client, config))
-    await asyncio.sleep(0.05)
-    task.cancel()
-    try:
-        await task
-    except asyncio.CancelledError:
-        pass
+    with caplog.at_level(logging.DEBUG, logger="pmmcp.health"):
+        task = asyncio.create_task(_health_monitor(client, config))
+        await asyncio.sleep(0.05)
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
 
     records = [r for r in caplog.records if "pmmcp.health" in r.name]
     assert any(r.levelno == logging.INFO for r in records)
@@ -73,13 +73,14 @@ async def test_health_monitor_includes_url_in_log(caplog):
     client = _make_mock_client((True, None))
     config = _make_mock_config(health_interval=999)
 
-    task = asyncio.create_task(_health_monitor(client, config))
-    await asyncio.sleep(0.05)
-    task.cancel()
-    try:
-        await task
-    except asyncio.CancelledError:
-        pass
+    with caplog.at_level(logging.DEBUG, logger="pmmcp.health"):
+        task = asyncio.create_task(_health_monitor(client, config))
+        await asyncio.sleep(0.05)
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
 
     records = [r for r in caplog.records if "pmmcp.health" in r.name]
     assert any(PMPROXY_URL in r.message for r in records)
