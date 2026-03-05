@@ -87,9 +87,7 @@ async def test_probe_uses_short_timeout(config):
     """probe() uses a 5-second timeout regardless of configured client timeout."""
     # Config has timeout=5.0 but we verify the probe uses its own short timeout.
     # We check this by confirming the request is made (it succeeds here).
-    respx.get(f"{PMPROXY_BASE}/series/sources").mock(
-        return_value=httpx.Response(200, json=[])
-    )
+    respx.get(f"{PMPROXY_BASE}/series/sources").mock(return_value=httpx.Response(200, json=[]))
 
     long_timeout_config = PmproxyConfig(url=PMPROXY_BASE, timeout=120.0)
     client = PmproxyClient(long_timeout_config)

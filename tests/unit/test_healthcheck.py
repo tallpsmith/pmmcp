@@ -5,8 +5,6 @@ from __future__ import annotations
 import json
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
-
 from pmmcp import __version__
 
 PMPROXY_URL = "http://localhost:44322"
