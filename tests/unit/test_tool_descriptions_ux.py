@@ -16,12 +16,12 @@ import pmmcp.tools.search as search_mod
 import pmmcp.tools.timeseries as ts_mod
 
 
-def test_detect_anomalies_description_states_use_first():
-    """pcp_detect_anomalies docstring declares it the first investigation tool."""
+def test_detect_anomalies_description_steers_to_quick_investigate():
+    """pcp_detect_anomalies docstring steers toward pcp_quick_investigate for discovery."""
     doc = anomaly_mod.pcp_detect_anomalies.__doc__
     assert doc is not None
-    assert "first" in doc.lower(), (
-        "Expected 'first' investigation language in pcp_detect_anomalies docstring"
+    assert "pcp_quick_investigate" in doc, (
+        "Expected steering to pcp_quick_investigate in pcp_detect_anomalies docstring"
     )
 
 

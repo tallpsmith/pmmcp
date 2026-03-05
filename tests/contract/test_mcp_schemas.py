@@ -14,11 +14,12 @@ EXPECTED_TOOLS = {
     "pcp_compare_windows",
     "pcp_search",
     "pcp_derive_metric",
+    "pcp_quick_investigate",
 }
 
 
-def test_all_9_tools_registered():
-    """All 9 MCP tools appear in the tool listing."""
+def test_all_tools_registered():
+    """All expected MCP tools appear in the tool listing."""
     tools = srv.mcp._tool_manager.list_tools()
     tool_names = {t.name for t in tools}
     missing = EXPECTED_TOOLS - tool_names
@@ -80,3 +81,45 @@ def test_tool_descriptions_present():
     for tool in tools:
         if tool.name in EXPECTED_TOOLS:
             assert tool.description, f"Tool {tool.name} has no description"
+
+
+# ---------------------------------------------------------------------------
+# US2: Tool description steering language (T010-T014)
+# ---------------------------------------------------------------------------
+
+
+def _get_tool_description(name: str) -> str:
+    tools = {t.name: t for t in srv.mcp._tool_manager.list_tools()}
+    assert name in tools, f"Tool {name} not registered"
+    return tools[name].description
+
+
+def test_quick_investigate_description_steering():
+    """T010: pcp_quick_investigate description signals it as the discovery entry point."""
+    desc = _get_tool_description("pcp_quick_investigate")
+    assert "Start here" in desc, f"Missing 'Start here' in: {desc}"
+    assert "open-ended investigation" in desc, f"Missing 'open-ended investigation' in: {desc}"
+
+
+def test_detect_anomalies_description_steering():
+    """T011: pcp_detect_anomalies steers toward pcp_quick_investigate for discovery."""
+    desc = _get_tool_description("pcp_detect_anomalies")
+    assert "pcp_quick_investigate" in desc, f"Missing steering in: {desc}"
+
+
+def test_compare_windows_description_steering():
+    """T012: pcp_compare_windows steers toward pcp_quick_investigate for discovery."""
+    desc = _get_tool_description("pcp_compare_windows")
+    assert "pcp_quick_investigate" in desc, f"Missing steering in: {desc}"
+
+
+def test_scan_changes_description_steering():
+    """T013: pcp_scan_changes steers toward pcp_quick_investigate for discovery."""
+    desc = _get_tool_description("pcp_scan_changes")
+    assert "pcp_quick_investigate" in desc, f"Missing steering in: {desc}"
+
+
+def test_fetch_timeseries_description_steering():
+    """T014: pcp_fetch_timeseries warns against exploratory use."""
+    desc = _get_tool_description("pcp_fetch_timeseries")
+    assert "NOT for exploratory investigation" in desc, f"Missing steering in: {desc}"

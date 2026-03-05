@@ -173,6 +173,27 @@ def test_all_4_prompts_registered():
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# US2: investigate_subsystem tool-ordering workflow (T015)
+# ---------------------------------------------------------------------------
+
+
+def test_investigate_subsystem_includes_tool_ordering_workflow():
+    """T015: investigate_subsystem prompt includes tool-ordering workflow."""
+    result = asyncio.run(srv.mcp.get_prompt("investigate_subsystem", {"subsystem": "cpu"}))
+    text = result.messages[0].content.text
+    assert "pcp_quick_investigate" in text, "Missing pcp_quick_investigate in prompt"
+    assert "pcp_detect_anomalies" in text or "pcp_compare_windows" in text, (
+        "Missing confirmation tools in prompt"
+    )
+    assert "pcp_fetch_timeseries" in text, "Missing pcp_fetch_timeseries in prompt"
+
+
+# ---------------------------------------------------------------------------
+# session_init (T003)
+# ---------------------------------------------------------------------------
+
+
 def test_session_init_registered():
     """session_init prompt is registered with the MCP server."""
     prompts = {p.name for p in srv.mcp._prompt_manager.list_prompts()}
