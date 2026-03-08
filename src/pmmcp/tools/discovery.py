@@ -59,9 +59,36 @@ async def _discover_metrics_impl(
             "has_more": offset + limit < total,
         }
 
-    # Use namespace tree (pmapi/children)
+    # Use namespace tree (pmapi/children) with recursive leaf traversal
+    MAX_DEPTH = 10
+
+    async def _collect_leaves(node_prefix: str, depth: int) -> list[dict]:
+        """Recursively walk namespace tree, collecting only leaf metrics."""
+        if depth > MAX_DEPTH:
+            return []
+
+        raw = await client.pmapi_children(node_prefix, host)
+        base = raw.get("name", node_prefix)
+        leaf_names = raw.get("leaf", [])
+        nonleaf_names = raw.get("nonleaf", [])
+
+        leaves: list[dict] = []
+        for name in leaf_names:
+            full_name = f"{base}.{name}" if base else name
+            leaves.append({"name": full_name, "oneline": "", "leaf": True})
+
+        for name in nonleaf_names:
+            full_name = f"{base}.{name}" if base else name
+            try:
+                sub_leaves = await _collect_leaves(full_name, depth + 1)
+                leaves.extend(sub_leaves)
+            except (PmproxyNotFoundError, PmproxyError):
+                logger.debug("Skipping inaccessible subtree: %s", full_name)
+
+        return leaves
+
     try:
-        raw = await client.pmapi_children(prefix, host)
+        all_leaves = await _collect_leaves(prefix, 0)
     except PmproxyConnectionError as exc:
         return _mcp_error("Connection error", str(exc), "Check pmproxy connectivity.")
     except PmproxyTimeoutError as exc:
@@ -75,20 +102,8 @@ async def _discover_metrics_impl(
     except PmproxyError as exc:
         return _mcp_error("pmproxy error", str(exc), "Check pmproxy logs.")
 
-    base_prefix = raw.get("name", prefix)
-    leaf_names = raw.get("leaf", [])
-    nonleaf_names = raw.get("nonleaf", [])
-
-    items = []
-    for name in leaf_names:
-        full_name = f"{base_prefix}.{name}" if base_prefix else name
-        items.append({"name": full_name, "oneline": "", "leaf": True})
-    for name in nonleaf_names:
-        full_name = f"{base_prefix}.{name}" if base_prefix else name
-        items.append({"name": full_name, "oneline": "", "leaf": False})
-
-    total = len(items)
-    page = items[offset : offset + limit]
+    total = len(all_leaves)
+    page = all_leaves[offset : offset + limit]
     return {
         "items": page,
         "total": total,
