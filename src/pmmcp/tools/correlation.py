@@ -8,6 +8,7 @@ from itertools import combinations
 from pmmcp.client import PmproxyClient, PmproxyConnectionError, PmproxyError, PmproxyTimeoutError
 from pmmcp.server import get_client, mcp
 from pmmcp.tools._errors import _mcp_error
+from pmmcp.tools._expr import build_series_expr
 from pmmcp.tools._fetch import _fetch_window
 from pmmcp.tools._stats import pearson_correlation
 from pmmcp.utils import resolve_interval
@@ -54,14 +55,12 @@ async def _correlate_metrics_impl(
 
     resolved = resolve_interval(start, end, interval)
 
-    if host:
-        expr_parts = [f'{name}{{hostname=="{host}"}}' for name in metrics]
-    else:
-        expr_parts = list(metrics)
-    expr = " or ".join(expr_parts)
+    expr = build_series_expr(metrics, host=host)
 
     try:
-        values_by_key, _ = await _fetch_window(client, expr, start, end, resolved, 1000)
+        values_by_key, _ = await _fetch_window(
+            client, exprs=[expr], start=start, end=end, interval=resolved, limit=1000,
+        )
     except PmproxyConnectionError as exc:
         return _mcp_error("Connection error", str(exc), "Check pmproxy connectivity.")
     except PmproxyTimeoutError as exc:

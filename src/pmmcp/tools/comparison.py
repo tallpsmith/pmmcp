@@ -7,7 +7,8 @@ import logging
 from pmmcp.client import PmproxyClient, PmproxyConnectionError, PmproxyError, PmproxyTimeoutError
 from pmmcp.server import get_client, mcp
 from pmmcp.tools._errors import _mcp_error
-from pmmcp.tools._fetch import _fetch_window
+from pmmcp.tools._expr import build_series_expr
+from pmmcp.tools._fetch import _fetch_window, _resolve_series_ids
 from pmmcp.tools._stats import _compute_stats
 from pmmcp.utils import resolve_interval
 
@@ -31,20 +32,19 @@ async def _compare_windows_impl(
     resolved = resolve_interval(window_a_start, window_a_end, interval)
 
     # Build expression
-    if host:
-        parts = [f'{name}{{hostname=="{host}"}}' for name in names]
-    else:
-        parts = list(names)
-    expr = " or ".join(parts) if len(parts) > 1 else parts[0]
+    expr = build_series_expr(names, host=host)
 
     limit = 1000  # fetch up to 1000 points per window for stats
 
     try:
+        series_ids = await _resolve_series_ids(client, [expr])
         values_a, samples_a = await _fetch_window(
-            client, expr, window_a_start, window_a_end, resolved, limit
+            client, exprs=[], start=window_a_start, end=window_a_end,
+            interval=resolved, limit=limit, series_ids=series_ids,
         )
         values_b, samples_b = await _fetch_window(
-            client, expr, window_b_start, window_b_end, resolved, limit
+            client, exprs=[], start=window_b_start, end=window_b_end,
+            interval=resolved, limit=limit, series_ids=series_ids,
         )
     except PmproxyConnectionError as exc:
         return _mcp_error("Connection error", str(exc), "Check pmproxy connectivity.")
