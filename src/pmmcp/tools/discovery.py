@@ -125,7 +125,7 @@ async def _get_metric_info_impl(
     for m in metrics_raw:
         metric_name = m.get("name", "")
         indom_raw = m.get("indom")
-        indom = None if indom_raw in (None, "none", "none") else indom_raw
+        indom = None if indom_raw is None or str(indom_raw).lower() == "none" else indom_raw
 
         metric = {
             "name": metric_name,
