@@ -91,6 +91,19 @@ class PmproxyClient:
         self._raise_for_response(response)
         return response
 
+    async def _post(self, path: str, data: dict | None = None) -> httpx.Response:
+        """POST with form-encoded body — mirrors _get but avoids URL length limits."""
+        try:
+            response = await self._client.post(path, data=data)
+        except httpx.ConnectError as exc:
+            raise PmproxyConnectionError(str(exc)) from exc
+        except httpx.RemoteProtocolError as exc:
+            raise PmproxyConnectionError(str(exc)) from exc
+        except httpx.TimeoutException as exc:
+            raise PmproxyTimeoutError(str(exc)) from exc
+        self._raise_for_response(response)
+        return response
+
     # ── Series API (stateless) ──────────────────────────────────────────────
 
     async def series_sources(self, match: str = "") -> list[dict]:
