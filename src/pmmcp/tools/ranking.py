@@ -8,6 +8,7 @@ import math
 from pmmcp.client import PmproxyClient, PmproxyConnectionError, PmproxyError, PmproxyTimeoutError
 from pmmcp.server import get_client, mcp
 from pmmcp.tools._errors import _mcp_error
+from pmmcp.tools._fetch import _resolve_series_ids
 from pmmcp.tools._stats import _compute_stats, outlier_flag
 from pmmcp.utils import expand_time_units, resolve_interval
 
@@ -36,7 +37,7 @@ async def _rank_hosts_impl(
     resolved = resolve_interval(start, end, interval)
 
     try:
-        series_ids = await client.series_query(metric)
+        series_ids = await _resolve_series_ids(client, [metric])
     except PmproxyConnectionError as exc:
         return _mcp_error("Connection error", str(exc), "Check pmproxy connectivity.")
     except PmproxyTimeoutError as exc:
@@ -46,9 +47,6 @@ async def _rank_hosts_impl(
 
     if not series_ids:
         return {"metric": metric, "hosts": [], "cluster_summary": {}}
-
-    if isinstance(series_ids[0], dict):
-        series_ids = list({entry["series"] for entry in series_ids})
 
     try:
         raw_values = await client.series_values(
