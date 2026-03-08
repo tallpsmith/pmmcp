@@ -7,7 +7,7 @@ import logging
 from pmmcp.client import PmproxyClient, PmproxyConnectionError, PmproxyError, PmproxyTimeoutError
 from pmmcp.server import get_client, mcp
 from pmmcp.tools._errors import _mcp_error
-from pmmcp.utils import expand_time_units as _expand_time_units
+from pmmcp.tools._fetch import _fetch_window
 from pmmcp.utils import natural_samples as compute_natural_samples
 from pmmcp.utils import resolve_interval
 
@@ -31,7 +31,10 @@ async def _resolve_series_and_fetch(
         effective_samples = limit
 
     try:
-        series_ids = await client.series_query(expr)
+        _, raw_samples = await _fetch_window(
+            client, exprs=[expr], start=start, end=end,
+            interval=resolved, limit=effective_samples,
+        )
     except PmproxyConnectionError as exc:
         return _mcp_error(
             "Connection error",
@@ -47,73 +50,13 @@ async def _resolve_series_and_fetch(
     except PmproxyError as exc:
         return _mcp_error("pmproxy error", str(exc), "Check the metric name or expression.")
 
-    if not series_ids:
-        return {"items": [], "total": 0, "limit": limit, "offset": offset, "has_more": False}
-
-    # Ensure series_ids are strings (not value-with-timestamp objects)
-    if isinstance(series_ids[0], dict):
-        series_ids = list({entry["series"] for entry in series_ids})
-
-    try:
-        values = await client.series_values(
-            series=series_ids,
-            start=_expand_time_units(start),
-            finish=_expand_time_units(end),
-            interval=resolved,
-            samples=effective_samples,
-        )
-    except PmproxyTimeoutError as exc:
-        return _mcp_error(
-            "Timeout",
-            f"pmproxy did not respond in time: {exc}",
-            "Try reducing the time window, interval, or limit.",
-        )
-    except PmproxyError as exc:
-        return _mcp_error("pmproxy error", str(exc), "Check pmproxy logs for details.")
-
-    # Get metric names for series IDs
-    name_by_series: dict[str, str] = {}
-    try:
-        labels_list = await client.series_labels(series_ids)
-        for item in labels_list:
-            metric_name = item.get("labels", {}).get("metric.name", "")
-            if metric_name:
-                name_by_series[item["series"]] = metric_name
-    except PmproxyError:
-        pass
-
-    # Get instance names if needed
-    instance_name_by_series: dict[str, str] = {}
-    try:
-        instances_list = await client.series_instances(series_ids)
-        for item in instances_list:
-            instance_name_by_series[item["series"]] = item.get("name", "")
-    except PmproxyError:
-        pass
-
-    # Group data points by (metric_name, instance)
-    grouped: dict[tuple[str, str | None], list[dict]] = {}
-    for point in values:
-        series_id = point["series"]
-        metric_name = name_by_series.get(series_id, series_id)
-        instance_name = instance_name_by_series.get(series_id) or None
-        key = (metric_name, instance_name)
-        if key not in grouped:
-            grouped[key] = []
-        grouped[key].append(
-            {
-                "timestamp": point["timestamp"],
-                "value": point["value"],
-            }
-        )
-
     all_items = [
         {
             "name": name,
             "instance": inst,
             "samples": samples,
         }
-        for (name, inst), samples in grouped.items()
+        for (name, inst), samples in raw_samples.items()
     ]
 
     total = len(all_items)
@@ -137,7 +80,6 @@ async def _fetch_timeseries_impl(
     instances: list[str],
     limit: int,
     offset: int,
-    zone: str,
 ) -> dict:
     """Core implementation for pcp_fetch_timeseries."""
     # Query each metric individually (pmproxy /series/query doesn't support
@@ -206,7 +148,6 @@ async def pcp_fetch_timeseries(
     instances: list[str] = [],  # noqa: B006
     limit: int = 500,
     offset: int = 0,
-    zone: str = "UTC",
 ) -> dict:
     """Fetch historical time-series values for one or more metrics over a time window.
 
@@ -230,7 +171,6 @@ async def pcp_fetch_timeseries(
         limit: Maximum data points per metric/instance (default 500).
             For exploration use 50; increase for full dataset analysis.
         offset: Pagination offset
-        zone: Timezone for timestamps
     """
     return await _fetch_timeseries_impl(
         get_client(),
@@ -242,7 +182,6 @@ async def pcp_fetch_timeseries(
         instances=instances,
         limit=limit,
         offset=offset,
-        zone=zone,
     )
 
 

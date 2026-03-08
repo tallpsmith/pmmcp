@@ -67,7 +67,7 @@ async def test_fetch_timeseries_auto_interval(config):
             instances=[],
             limit=500,
             offset=0,
-            zone="UTC",
+
         )
         assert not result.get("isError"), f"Got error: {result}"
         # Verify interval was resolved (not 'auto')
@@ -129,7 +129,7 @@ async def test_fetch_timeseries_paginated_output(config):
             instances=[],
             limit=500,
             offset=0,
-            zone="UTC",
+
         )
         assert not result.get("isError"), f"Got error: {result}"
         assert "items" in result
@@ -182,7 +182,7 @@ async def test_fetch_timeseries_500_point_default_limit(config):
             instances=[],
             limit=500,
             offset=0,
-            zone="UTC",
+
         )
         # The samples parameter passed to pmproxy should be <= 500
         for call in respx.calls:
@@ -280,7 +280,7 @@ async def test_fetch_timeseries_multi_metric_queries_separately(config):
             instances=[],
             limit=500,
             offset=0,
-            zone="UTC",
+
         )
         assert not result.get("isError"), f"Got error: {result}"
         # Two separate /series/query calls, one per metric
@@ -318,7 +318,7 @@ async def test_fetch_timeseries_natural_sample_cap(config):
             instances=[],
             limit=500,  # higher than natural — should be capped at 240
             offset=0,
-            zone="UTC",
+
         )
         assert values_route.called
         import re
@@ -352,7 +352,7 @@ async def test_fetch_timeseries_remote_protocol_error_returns_mcp_error(config):
             instances=[],
             limit=500,
             offset=0,
-            zone="UTC",
+
         )
         assert result.get("isError") is True
         text = result["content"][0]["text"]
@@ -380,7 +380,7 @@ async def test_fetch_timeseries_timeout_returns_mcp_error(config):
             instances=[],
             limit=500,
             offset=0,
-            zone="UTC",
+
         )
         assert result.get("isError") is True
         text = result["content"][0]["text"]
