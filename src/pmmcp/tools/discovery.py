@@ -62,9 +62,15 @@ async def _discover_metrics_impl(
     # Use namespace tree (pmapi/children) with recursive leaf traversal
     MAX_DEPTH = 10
 
-    async def _collect_leaves(node_prefix: str, depth: int) -> list[dict]:
-        """Recursively walk namespace tree, collecting only leaf metrics."""
-        if depth > MAX_DEPTH:
+    async def _collect_leaves(node_prefix: str, depth: int, remaining: int) -> list[dict]:
+        """Recursively walk namespace tree, collecting only leaf metrics.
+
+        Args:
+            node_prefix: Current namespace node to expand.
+            depth: Current recursion depth (capped at MAX_DEPTH).
+            remaining: Max leaves still needed. Stops early once reached.
+        """
+        if depth > MAX_DEPTH or remaining <= 0:
             return []
 
         raw = await client.pmapi_children(node_prefix, host)
@@ -76,11 +82,15 @@ async def _discover_metrics_impl(
         for name in leaf_names:
             full_name = f"{base}.{name}" if base else name
             leaves.append({"name": full_name, "oneline": "", "leaf": True})
+            if len(leaves) >= remaining:
+                return leaves
 
         for name in nonleaf_names:
+            if len(leaves) >= remaining:
+                break
             full_name = f"{base}.{name}" if base else name
             try:
-                sub_leaves = await _collect_leaves(full_name, depth + 1)
+                sub_leaves = await _collect_leaves(full_name, depth + 1, remaining - len(leaves))
                 leaves.extend(sub_leaves)
             except (PmproxyNotFoundError, PmproxyError):
                 logger.debug("Skipping inaccessible subtree: %s", full_name)
@@ -88,7 +98,7 @@ async def _discover_metrics_impl(
         return leaves
 
     try:
-        all_leaves = await _collect_leaves(prefix, 0)
+        all_leaves = await _collect_leaves(prefix, 0, limit + offset)
     except PmproxyConnectionError as exc:
         return _mcp_error("Connection error", str(exc), "Check pmproxy connectivity.")
     except PmproxyTimeoutError as exc:
@@ -102,14 +112,17 @@ async def _discover_metrics_impl(
     except PmproxyError as exc:
         return _mcp_error("pmproxy error", str(exc), "Check pmproxy logs.")
 
-    total = len(all_leaves)
+    collected = len(all_leaves)
+    cap = limit + offset
+    # If we hit the collection cap, more leaves likely exist beyond what we gathered
+    truncated = collected >= cap
     page = all_leaves[offset : offset + limit]
     return {
         "items": page,
-        "total": total,
+        "total": collected,
         "limit": limit,
         "offset": offset,
-        "has_more": offset + limit < total,
+        "has_more": truncated or offset + limit < collected,
     }
 
 
