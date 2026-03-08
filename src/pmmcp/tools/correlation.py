@@ -59,7 +59,12 @@ async def _correlate_metrics_impl(
 
     try:
         values_by_key, _ = await _fetch_window(
-            client, exprs=[expr], start=start, end=end, interval=resolved, limit=1000,
+            client,
+            exprs=[expr],
+            start=start,
+            end=end,
+            interval=resolved,
+            limit=1000,
         )
     except PmproxyConnectionError as exc:
         return _mcp_error("Connection error", str(exc), "Check pmproxy connectivity.")

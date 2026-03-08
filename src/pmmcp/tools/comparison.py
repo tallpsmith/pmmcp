@@ -39,12 +39,22 @@ async def _compare_windows_impl(
     try:
         series_ids = await _resolve_series_ids(client, [expr])
         values_a, samples_a = await _fetch_window(
-            client, exprs=[], start=window_a_start, end=window_a_end,
-            interval=resolved, limit=limit, series_ids=series_ids,
+            client,
+            exprs=[],
+            start=window_a_start,
+            end=window_a_end,
+            interval=resolved,
+            limit=limit,
+            series_ids=series_ids,
         )
         values_b, samples_b = await _fetch_window(
-            client, exprs=[], start=window_b_start, end=window_b_end,
-            interval=resolved, limit=limit, series_ids=series_ids,
+            client,
+            exprs=[],
+            start=window_b_start,
+            end=window_b_end,
+            interval=resolved,
+            limit=limit,
+            series_ids=series_ids,
         )
     except PmproxyConnectionError as exc:
         return _mcp_error("Connection error", str(exc), "Check pmproxy connectivity.")

@@ -47,12 +47,22 @@ async def _detect_anomalies_impl(
     try:
         series_ids = await _resolve_series_ids(client, exprs)
         baseline_vals, _ = await _fetch_window(
-            client, exprs=[], start=baseline_start, end=baseline_end,
-            interval=resolved, limit=1000, series_ids=series_ids,
+            client,
+            exprs=[],
+            start=baseline_start,
+            end=baseline_end,
+            interval=resolved,
+            limit=1000,
+            series_ids=series_ids,
         )
         recent_vals, _ = await _fetch_window(
-            client, exprs=[], start=recent_start, end=recent_end,
-            interval=resolved, limit=200, series_ids=series_ids,
+            client,
+            exprs=[],
+            start=recent_start,
+            end=recent_end,
+            interval=resolved,
+            limit=200,
+            series_ids=series_ids,
         )
     except PmproxyConnectionError as exc:
         return _mcp_error("Connection error", str(exc), "Check pmproxy connectivity.")

@@ -6,7 +6,6 @@ import pytest
 
 from pmmcp.tools._expr import MAX_EXPR_METRICS, _escape_host, build_series_expr, build_series_exprs
 
-
 # ── _escape_host ─────────────────────────────────────────────────────────────
 
 
@@ -44,9 +43,7 @@ class TestBuildSeriesExpr:
         assert "web01" in result
 
     def test_multiple_metrics_with_host(self):
-        result = build_series_expr(
-            ["mem.util.used", "mem.util.free"], host="web01"
-        )
+        result = build_series_expr(["mem.util.used", "mem.util.free"], host="web01")
         assert "mem.util.used" in result
         assert "mem.util.free" in result
         assert "web01" in result

@@ -46,9 +46,7 @@ class TestSeriesValuesBatching:
 
         client = PmproxyClient(config)
         try:
-            result = await client.series_values(
-                series, start="-1hours", finish="now"
-            )
+            result = await client.series_values(series, start="-1hours", finish="now")
             assert get_route.called
             assert not post_route.called
             assert len(result) == 1
@@ -66,9 +64,7 @@ class TestSeriesValuesBatching:
         def post_handler(request):
             nonlocal call_count
             call_count += 1
-            return httpx.Response(
-                200, json=[{"series": "x", "value": str(call_count)}]
-            )
+            return httpx.Response(200, json=[{"series": "x", "value": str(call_count)}])
 
         get_route = respx.get(f"{PMPROXY_BASE}/series/values").mock(
             return_value=httpx.Response(200, json=[])
@@ -77,9 +73,7 @@ class TestSeriesValuesBatching:
 
         client = PmproxyClient(config)
         try:
-            result = await client.series_values(
-                series, start="-1hours", finish="now"
-            )
+            result = await client.series_values(series, start="-1hours", finish="now")
             assert not get_route.called
             assert call_count == 2
             # Results from both batches should be merged
@@ -118,9 +112,7 @@ class TestSeriesLabelsBatching:
         """series_labels under limit uses GET."""
         series = _make_series_ids(10)
         get_route = respx.get(f"{PMPROXY_BASE}/series/labels").mock(
-            return_value=httpx.Response(
-                200, json=[{"series": series[0], "labels": {"host": "a"}}]
-            )
+            return_value=httpx.Response(200, json=[{"series": series[0], "labels": {"host": "a"}}])
         )
         post_route = respx.post(f"{PMPROXY_BASE}/series/labels").mock(
             return_value=httpx.Response(200, json=[])
@@ -146,13 +138,9 @@ class TestSeriesLabelsBatching:
         def post_handler(request):
             nonlocal call_count
             call_count += 1
-            return httpx.Response(
-                200, json=[{"series": "x", "labels": {"batch": call_count}}]
-            )
+            return httpx.Response(200, json=[{"series": "x", "labels": {"batch": call_count}}])
 
-        respx.get(f"{PMPROXY_BASE}/series/labels").mock(
-            return_value=httpx.Response(200, json=[])
-        )
+        respx.get(f"{PMPROXY_BASE}/series/labels").mock(return_value=httpx.Response(200, json=[]))
         respx.post(f"{PMPROXY_BASE}/series/labels").mock(side_effect=post_handler)
 
         client = PmproxyClient(config)
@@ -175,9 +163,7 @@ class TestSeriesInstancesBatching:
         """series_instances under limit uses GET."""
         series = _make_series_ids(5)
         get_route = respx.get(f"{PMPROXY_BASE}/series/instances").mock(
-            return_value=httpx.Response(
-                200, json=[{"series": series[0], "instance": 1}]
-            )
+            return_value=httpx.Response(200, json=[{"series": series[0], "instance": 1}])
         )
         post_route = respx.post(f"{PMPROXY_BASE}/series/instances").mock(
             return_value=httpx.Response(200, json=[])
@@ -203,9 +189,7 @@ class TestSeriesInstancesBatching:
         def post_handler(request):
             nonlocal call_count
             call_count += 1
-            return httpx.Response(
-                200, json=[{"series": "x", "instance": call_count}]
-            )
+            return httpx.Response(200, json=[{"series": "x", "instance": call_count}])
 
         respx.get(f"{PMPROXY_BASE}/series/instances").mock(
             return_value=httpx.Response(200, json=[])

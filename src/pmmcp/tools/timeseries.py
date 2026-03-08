@@ -32,8 +32,12 @@ async def _resolve_series_and_fetch(
 
     try:
         _, raw_samples = await _fetch_window(
-            client, exprs=[expr], start=start, end=end,
-            interval=resolved, limit=effective_samples,
+            client,
+            exprs=[expr],
+            start=start,
+            end=end,
+            interval=resolved,
+            limit=effective_samples,
         )
     except PmproxyConnectionError as exc:
         return _mcp_error(

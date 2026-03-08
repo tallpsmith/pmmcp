@@ -21,9 +21,7 @@ def build_series_expr(names: list[str], host: str = "") -> str:
     Raises ValueError if names exceeds MAX_EXPR_METRICS.
     """
     if len(names) > MAX_EXPR_METRICS:
-        raise ValueError(
-            f"{len(names)} metric names exceeds MAX_EXPR_METRICS ({MAX_EXPR_METRICS})"
-        )
+        raise ValueError(f"{len(names)} metric names exceeds MAX_EXPR_METRICS ({MAX_EXPR_METRICS})")
 
     if len(names) == 1:
         metric_part = names[0]

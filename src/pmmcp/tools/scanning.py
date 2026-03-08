@@ -37,12 +37,22 @@ async def _scan_changes_impl(
     try:
         series_ids = await _resolve_series_ids(client, [expr])
         baseline_vals, _ = await _fetch_window(
-            client, exprs=[], start=baseline_start, end=baseline_end,
-            interval=resolved, limit=500, series_ids=series_ids,
+            client,
+            exprs=[],
+            start=baseline_start,
+            end=baseline_end,
+            interval=resolved,
+            limit=500,
+            series_ids=series_ids,
         )
         comparison_vals, _ = await _fetch_window(
-            client, exprs=[], start=comparison_start, end=comparison_end,
-            interval=resolved, limit=500, series_ids=series_ids,
+            client,
+            exprs=[],
+            start=comparison_start,
+            end=comparison_end,
+            interval=resolved,
+            limit=500,
+            series_ids=series_ids,
         )
     except PmproxyConnectionError as exc:
         return _mcp_error("Connection error", str(exc), "Check pmproxy connectivity.")

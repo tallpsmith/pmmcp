@@ -54,9 +54,7 @@ class TestResolveSeriesIds:
         from pmmcp.tools._fetch import _resolve_series_ids
 
         respx.get(f"{PMPROXY_BASE}/series/query").mock(
-            return_value=httpx.Response(
-                200, json=[{"series": SERIES_A}, {"series": SERIES_B}]
-            )
+            return_value=httpx.Response(200, json=[{"series": SERIES_A}, {"series": SERIES_B}])
         )
 
         client = PmproxyClient(config)
@@ -71,9 +69,7 @@ class TestResolveSeriesIds:
         """_resolve_series_ids returns empty list when no series found."""
         from pmmcp.tools._fetch import _resolve_series_ids
 
-        respx.get(f"{PMPROXY_BASE}/series/query").mock(
-            return_value=httpx.Response(200, json=[])
-        )
+        respx.get(f"{PMPROXY_BASE}/series/query").mock(return_value=httpx.Response(200, json=[]))
 
         client = PmproxyClient(config)
         try:
@@ -112,9 +108,7 @@ class TestFetchMetadata:
 
         client = PmproxyClient(config)
         try:
-            name_by_series, instance_by_series = await _fetch_metadata(
-                client, [SERIES_A]
-            )
+            name_by_series, instance_by_series = await _fetch_metadata(client, [SERIES_A])
             assert name_by_series[SERIES_A] == "kernel.all.load"
             assert instance_by_series[SERIES_A] == "1 minute"
         finally:
@@ -137,9 +131,7 @@ class TestFetchMetadata:
 
         client = PmproxyClient(config)
         try:
-            name_by_series, instance_by_series = await _fetch_metadata(
-                client, [SERIES_A]
-            )
+            name_by_series, instance_by_series = await _fetch_metadata(client, [SERIES_A])
             # Labels failed, so name_by_series should be empty
             assert name_by_series == {}
             # Instances should still work
@@ -260,9 +252,7 @@ class TestFetchWindowRefactored:
         """_fetch_window returns empty dicts when no series are found."""
         from pmmcp.tools._fetch import _fetch_window
 
-        respx.get(f"{PMPROXY_BASE}/series/query").mock(
-            return_value=httpx.Response(200, json=[])
-        )
+        respx.get(f"{PMPROXY_BASE}/series/query").mock(return_value=httpx.Response(200, json=[]))
 
         client = PmproxyClient(config)
         try:
