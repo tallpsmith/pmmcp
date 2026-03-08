@@ -2,64 +2,107 @@
 
 from __future__ import annotations
 
+import asyncio
+
 from pmmcp.client import PmproxyClient, PmproxyConnectionError, PmproxyError, PmproxyTimeoutError
 from pmmcp.utils import expand_time_units
 
 
+async def _resolve_series_ids(client: PmproxyClient, exprs: list[str]) -> list[str]:
+    """Query one or more expressions and return deduplicated series IDs.
+
+    Handles both str and dict return types from pmproxy.
+    """
+    seen: set[str] = set()
+    result: list[str] = []
+
+    for expr in exprs:
+        try:
+            raw = await client.series_query(expr)
+        except (PmproxyConnectionError, PmproxyTimeoutError, PmproxyError):
+            raise
+
+        if not raw:
+            continue
+
+        for entry in raw:
+            sid = entry["series"] if isinstance(entry, dict) else entry
+            if sid not in seen:
+                seen.add(sid)
+                result.append(sid)
+
+    return result
+
+
+async def _fetch_metadata(
+    client: PmproxyClient, series_ids: list[str]
+) -> tuple[dict[str, str], dict[str, str]]:
+    """Fetch labels and instances concurrently, returning (name_by_series, instance_name_by_series).
+
+    Errors in either call are swallowed — the caller gets empty dicts for the failed half.
+    Batching is handled transparently by the client layer.
+    """
+    name_by_series: dict[str, str] = {}
+    instance_name_by_series: dict[str, str] = {}
+
+    async def fetch_labels():
+        try:
+            labels_list = await client.series_labels(series_ids)
+            for item in labels_list:
+                metric_name = item.get("labels", {}).get("metric.name", "")
+                if metric_name:
+                    name_by_series[item["series"]] = metric_name
+        except PmproxyError:
+            pass
+
+    async def fetch_instances():
+        try:
+            instances_list = await client.series_instances(series_ids)
+            for item in instances_list:
+                instance_name_by_series[item["series"]] = item.get("name", "")
+        except PmproxyError:
+            pass
+
+    await asyncio.gather(fetch_labels(), fetch_instances())
+    return name_by_series, instance_name_by_series
+
+
 async def _fetch_window(
     client: PmproxyClient,
-    expr: str,
+    exprs: list[str],
     start: str,
     end: str,
     interval: str,
     limit: int,
+    series_ids: list[str] | None = None,
 ) -> tuple[dict[tuple[str, str | None], list[float]], dict[tuple[str, str | None], list[dict]]]:
     """Fetch a time window and return (numeric_values_by_key, raw_samples_by_key).
 
+    When series_ids is provided, skips the query step entirely — useful for
+    dual-window deduplication where the same series are fetched twice.
+
+    Batching of large series ID lists is handled transparently by the client layer.
+
     Raises PmproxyConnectionError, PmproxyTimeoutError, or PmproxyError on failure.
     """
-    try:
-        series_ids = await client.series_query(expr)
-    except (PmproxyConnectionError, PmproxyTimeoutError, PmproxyError):
-        raise
+    if series_ids is None:
+        series_ids = await _resolve_series_ids(client, exprs)
 
     if not series_ids:
         return {}, {}
 
-    if isinstance(series_ids[0], dict):
-        series_ids = list({entry["series"] for entry in series_ids})
+    raw_values = await client.series_values(
+        series=series_ids,
+        start=expand_time_units(start),
+        finish=expand_time_units(end),
+        interval=interval,
+        samples=limit,
+    )
 
-    try:
-        raw_values = await client.series_values(
-            series=series_ids,
-            start=expand_time_units(start),
-            finish=expand_time_units(end),
-            interval=interval,
-            samples=limit,
-        )
-    except (PmproxyConnectionError, PmproxyTimeoutError, PmproxyError):
-        raise
+    # Fetch metadata (labels + instances) concurrently
+    name_by_series, instance_name_by_series = await _fetch_metadata(client, series_ids)
 
-    # Get metric names for series IDs
-    name_by_series: dict[str, str] = {}
-    try:
-        labels_list = await client.series_labels(series_ids)
-        for item in labels_list:
-            metric_name = item.get("labels", {}).get("metric.name", "")
-            if metric_name:
-                name_by_series[item["series"]] = metric_name
-    except PmproxyError:
-        pass
-
-    # Get instance names
-    instance_name_by_series: dict[str, str] = {}
-    try:
-        instances_list = await client.series_instances(series_ids)
-        for item in instances_list:
-            instance_name_by_series[item["series"]] = item.get("name", "")
-    except PmproxyError:
-        pass
-
+    # Assemble results
     numeric_values: dict[tuple[str, str | None], list[float]] = {}
     raw_samples: dict[tuple[str, str | None], list[dict]] = {}
 
