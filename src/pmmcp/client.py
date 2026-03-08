@@ -8,6 +8,11 @@ from pmmcp.config import PmproxyConfig
 
 logger = logging.getLogger(__name__)
 
+# pmproxy has a ~8KB URL parameter limit (MAX_PARAMS_SIZE).
+# Each series ID is a 40-char SHA-1 hex string + comma separator = 41 bytes.
+# 150 * 41 ≈ 6150 bytes — safely under the limit with room for other params.
+SERIES_BATCH_SIZE = 150
+
 
 class PmproxyError(Exception):
     """Base exception for pmproxy communication errors."""
@@ -125,18 +130,25 @@ class PmproxyClient:
         interval: str | None = None,
         samples: int | None = None,
     ) -> list[dict]:
-        """GET /series/values — fetch time-series data points."""
-        params: dict = {
-            "series": ",".join(series),
-            "start": start,
-            "finish": finish,
-        }
+        """Fetch time-series data points, batching large series lists via POST."""
+        extra: dict = {"start": start, "finish": finish}
         if interval:
-            params["interval"] = interval
+            extra["interval"] = interval
         if samples is not None:
-            params["samples"] = samples
-        response = await self._get("/series/values", params)
-        return response.json()
+            extra["samples"] = samples
+
+        if len(series) <= SERIES_BATCH_SIZE:
+            params = {"series": ",".join(series), **extra}
+            response = await self._get("/series/values", params)
+            return response.json()
+
+        results: list[dict] = []
+        for i in range(0, len(series), SERIES_BATCH_SIZE):
+            chunk = series[i : i + SERIES_BATCH_SIZE]
+            data = {"series": ",".join(chunk), **extra}
+            response = await self._post("/series/values", data=data)
+            results.extend(response.json())
+        return results
 
     async def series_descs(self, series: list[str]) -> list[dict]:
         """GET /series/descs — metric descriptors for series IDs."""
@@ -144,14 +156,30 @@ class PmproxyClient:
         return response.json()
 
     async def series_instances(self, series: list[str]) -> list[dict]:
-        """GET /series/instances — instance domain members."""
-        response = await self._get("/series/instances", {"series": ",".join(series)})
-        return response.json()
+        """Fetch instance domain members, batching large series lists via POST."""
+        if len(series) <= SERIES_BATCH_SIZE:
+            response = await self._get("/series/instances", {"series": ",".join(series)})
+            return response.json()
+
+        results: list[dict] = []
+        for i in range(0, len(series), SERIES_BATCH_SIZE):
+            chunk = series[i : i + SERIES_BATCH_SIZE]
+            response = await self._post("/series/instances", data={"series": ",".join(chunk)})
+            results.extend(response.json())
+        return results
 
     async def series_labels(self, series: list[str]) -> list[dict]:
-        """GET /series/labels — labels for series."""
-        response = await self._get("/series/labels", {"series": ",".join(series)})
-        return response.json()
+        """Fetch labels for series, batching large series lists via POST."""
+        if len(series) <= SERIES_BATCH_SIZE:
+            response = await self._get("/series/labels", {"series": ",".join(series)})
+            return response.json()
+
+        results: list[dict] = []
+        for i in range(0, len(series), SERIES_BATCH_SIZE):
+            chunk = series[i : i + SERIES_BATCH_SIZE]
+            response = await self._post("/series/labels", data={"series": ",".join(chunk)})
+            results.extend(response.json())
+        return results
 
     # ── Search API (stateless) ──────────────────────────────────────────────
 
