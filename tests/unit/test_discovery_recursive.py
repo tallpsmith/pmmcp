@@ -142,6 +142,43 @@ async def test_respects_limit_during_recursion(config):
 
 
 @respx.mock
+async def test_early_termination_avoids_unnecessary_subtrees(config):
+    """With limit=2 offset=0, should NOT recurse into kernel.percpu at all.
+
+    Tree: kernel -> all (nonleaf), percpu (nonleaf)
+      kernel.all -> load (leaf), cpu (nonleaf)
+        kernel.all.cpu -> user (leaf), sys (leaf), idle (leaf)
+      kernel.percpu -> interrupts (leaf)
+
+    With limit=2, we get kernel.all.load + kernel.all.cpu.user = 2 leaves.
+    kernel.percpu should never be visited.
+    """
+    calls_made: list[str] = []
+
+    def tracking_handler(request):
+        prefix = dict(request.url.params).get("prefix", "")
+        calls_made.append(prefix)
+        return _children_handler_kernel(request)
+
+    respx.get(f"{PMPROXY_BASE}/pmapi/context").mock(return_value=_mock_context())
+    respx.get(f"{PMPROXY_BASE}/pmapi/children").mock(side_effect=tracking_handler)
+
+    client = PmproxyClient(config)
+    try:
+        result = await _discover_metrics_impl(
+            client, host="", prefix="kernel", search="", limit=2, offset=0
+        )
+        assert not result.get("isError"), f"Got error: {result}"
+        assert len(result["items"]) == 2
+        # kernel.percpu should NOT have been visited -- early termination
+        assert "kernel.percpu" not in calls_made, (
+            f"kernel.percpu was visited despite having enough leaves. Calls: {calls_made}"
+        )
+    finally:
+        await client.close()
+
+
+@respx.mock
 async def test_shallow_when_prefix_has_direct_leaves(config):
     """Prefix that already has leaf children returns them directly."""
     respx.get(f"{PMPROXY_BASE}/pmapi/context").mock(return_value=_mock_context())
@@ -224,5 +261,57 @@ async def test_handles_subtree_error_gracefully(config):
         assert not result.get("isError"), f"Got error: {result}"
         names = [item["name"] for item in result["items"]]
         assert "kernel.all.load" in names
+    finally:
+        await client.close()
+
+
+@respx.mock
+async def test_depth_limit_stops_recursion(config):
+    """A namespace tree deeper than MAX_DEPTH=10 stops recursing and returns what it has.
+
+    Build a chain: deep.0 -> deep.0.1 -> deep.0.1.2 -> ... -> deep.0.1...11 (leaf)
+    Only the leaf at depth 11 exists, but we should never reach it.
+    """
+    max_depth = 10  # Must match MAX_DEPTH in discovery.py
+
+    def deep_handler(request):
+        prefix = dict(request.url.params).get("prefix", "")
+        # Count dots to determine depth: "deep" = 0, "deep.0" = 1, etc.
+        depth = prefix.count(".")
+        if depth < max_depth + 2:
+            # Keep going deeper -- nonleaf only (no leaves until depth 12)
+            return httpx.Response(
+                200,
+                json={
+                    "context": TEST_CONTEXT,
+                    "name": prefix,
+                    "leaf": [],
+                    "nonleaf": ["next"],
+                },
+            )
+        else:
+            # Way past the limit -- leaf node that should never be reached
+            return httpx.Response(
+                200,
+                json={
+                    "context": TEST_CONTEXT,
+                    "name": prefix,
+                    "leaf": ["unreachable"],
+                    "nonleaf": [],
+                },
+            )
+
+    respx.get(f"{PMPROXY_BASE}/pmapi/context").mock(return_value=_mock_context())
+    respx.get(f"{PMPROXY_BASE}/pmapi/children").mock(side_effect=deep_handler)
+
+    client = PmproxyClient(config)
+    try:
+        result = await _discover_metrics_impl(
+            client, host="", prefix="deep", search="", limit=50, offset=0
+        )
+        assert not result.get("isError"), f"Got error: {result}"
+        # Should find zero leaves -- the only leaf is past MAX_DEPTH
+        assert result["total"] == 0
+        assert result["items"] == []
     finally:
         await client.close()
