@@ -1,10 +1,10 @@
-"""T015 + T016 — E2E tests: all nine MCP tools via real pmmcp subprocess.
+"""T015 + T016 — E2E tests: all MCP tools via real pmmcp subprocess.
 
 Requires: PMPROXY_URL set and a running PCP + redis-stack.
 Gating: see tests/e2e/conftest.py.
 
 Run locally:
-  docker compose up -d
+  podman compose up -d
   PMPROXY_URL=http://localhost:44322 uv run pytest tests/e2e/ -m e2e
 """
 
@@ -42,7 +42,7 @@ async def test_get_hosts(e2e_session):
 
 @pytest.mark.e2e
 async def test_fetch_timeseries(e2e_session):
-    """pcp_fetch_timeseries returns data points from real PCP."""
+    """pcp_fetch_timeseries sinks data to SQLite and returns metadata."""
     result = await e2e_session.call_tool(
         "pcp_fetch_timeseries",
         {
@@ -54,24 +54,38 @@ async def test_fetch_timeseries(e2e_session):
     )
     assert not result.isError, f"MCP error: {result.content[0].text}"
     data = json.loads(result.content[0].text)
-    assert isinstance(data.get("items"), list)
+    assert data.get("row_count", 0) > 0, "Expected rows written to session DB"
+    assert "mem.util.used" in data.get("metrics", [])
 
 
 # ---------------------------------------------------------------------------
-# T016 — Remaining 6 tools
+# T016 — Remaining tools
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.e2e
-async def test_query_series(e2e_session):
-    """pcp_query_series returns series IDs from real PCP."""
+async def test_query_sqlite(e2e_session):
+    """pcp_query_sqlite runs SQL against session DB after a fetch."""
+    # First, load some data
+    fetch = await e2e_session.call_tool(
+        "pcp_fetch_timeseries",
+        {
+            "expr": "kernel.all.load",
+            "start": "-2m",
+            "end": "now",
+            "interval": "10s",
+        },
+    )
+    assert not fetch.isError, f"Fetch error: {fetch.content[0].text}"
+
+    # Now query it
     result = await e2e_session.call_tool(
-        "pcp_query_series",
-        {"expr": "kernel.all.load", "start": "-2m", "end": "now"},
+        "pcp_query_sqlite",
+        {"sql": "SELECT metric, COUNT(*) AS cnt FROM timeseries GROUP BY metric"},
     )
     assert not result.isError, f"MCP error: {result.content[0].text}"
     data = json.loads(result.content[0].text)
-    assert isinstance(data.get("items"), list)
+    assert data.get("row_count", 0) > 0, "Expected query results"
 
 
 @pytest.mark.e2e
@@ -105,7 +119,9 @@ async def test_discover_metrics_search(e2e_session):
 @pytest.mark.e2e
 async def test_get_metric_info(e2e_session):
     """pcp_get_metric_info returns metadata for kernel.all.load from real PCP."""
-    result = await e2e_session.call_tool("pcp_get_metric_info", {"names": ["kernel.all.load"]})
+    result = await e2e_session.call_tool(
+        "pcp_get_metric_info", {"names": ["kernel.all.load"]}
+    )
     assert not result.isError, f"MCP error: {result.content[0].text}"
     data = json.loads(result.content[0].text)
     # Response may be a list or dict depending on tool version
