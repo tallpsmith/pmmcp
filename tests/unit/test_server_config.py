@@ -1,4 +1,5 @@
 """Tests for ServerConfig transport configuration via env vars."""
+
 from __future__ import annotations
 
 import pytest
@@ -64,9 +65,7 @@ class TestMainWiring:
         monkeypatch.setenv("PMMCP_HOST", "0.0.0.0")
         monkeypatch.setenv("PMMCP_PORT", "9090")
         # Only pass the required --pmproxy-url so argparse doesn't fail
-        monkeypatch.setattr(
-            "sys.argv", ["pmmcp", "--pmproxy-url", "http://localhost:44322"]
-        )
+        monkeypatch.setattr("sys.argv", ["pmmcp", "--pmproxy-url", "http://localhost:44322"])
 
         # We can't call main() (it would start the server), so we replicate
         # the parser setup path and check the parsed args.

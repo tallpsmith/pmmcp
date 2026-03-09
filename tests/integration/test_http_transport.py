@@ -1,4 +1,5 @@
 """Integration test: pmmcp starts in HTTP mode and exposes /healthcheck."""
+
 from __future__ import annotations
 
 import subprocess
@@ -36,9 +37,7 @@ def test_http_transport_healthcheck():
     try:
         # Give the server a moment to bind
         time.sleep(2)
-        assert proc.poll() is None, (
-            f"Process exited early: {proc.stderr.read().decode()}"
-        )
+        assert proc.poll() is None, f"Process exited early: {proc.stderr.read().decode()}"
 
         resp = httpx.get("http://127.0.0.1:18080/healthcheck", timeout=5)
         assert resp.status_code == 503
