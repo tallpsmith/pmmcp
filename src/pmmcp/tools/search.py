@@ -65,7 +65,7 @@ async def _search_impl(
 async def pcp_search(
     query: str,
     type: str = "all",
-    limit: int = 20,
+    limit: int = 50,
     offset: int = 0,
 ) -> dict:
     """Full-text search across all metric names, help text, instance domains, and labels.
