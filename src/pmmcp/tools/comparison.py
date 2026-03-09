@@ -8,8 +8,8 @@ from pmmcp.client import PmproxyClient, PmproxyConnectionError, PmproxyError, Pm
 from pmmcp.server import get_client, mcp
 from pmmcp.tools._errors import _mcp_error
 from pmmcp.tools._expr import build_series_expr
-from pmmcp.tools._fetch import _fetch_window, _resolve_series_ids
-from pmmcp.tools._stats import _compute_stats
+from pmmcp.tools._fetch import _fetch_descs, _fetch_metadata, _fetch_window, _resolve_series_ids
+from pmmcp.tools._stats import _compute_rates, _compute_stats
 from pmmcp.utils import resolve_interval
 
 logger = logging.getLogger(__name__)
@@ -38,6 +38,19 @@ async def _compare_windows_impl(
 
     try:
         series_ids = await _resolve_series_ids(client, [expr])
+
+        # Fetch metric semantics to detect counters vs instant/discrete
+        descs_by_series = await _fetch_descs(client, series_ids)
+        name_by_series, instance_name_by_series = await _fetch_metadata(client, series_ids)
+
+        # Build semantics lookup keyed the same way _fetch_window keys its results
+        semantics_by_key: dict[tuple[str, str | None], str] = {}
+        for sid in series_ids:
+            metric_name = name_by_series.get(sid, sid)
+            inst_name = instance_name_by_series.get(sid) or None
+            key = (metric_name, inst_name)
+            semantics_by_key[key] = descs_by_series.get(sid, "instant")
+
         values_a, samples_a = await _fetch_window(
             client,
             exprs=[],
@@ -77,8 +90,17 @@ async def _compare_windows_impl(
         va = values_a.get(key, [])
         vb = values_b.get(key, [])
 
-        stats_a = _compute_stats(va)
-        stats_b = _compute_stats(vb)
+        semantics = semantics_by_key.get(key, "instant")
+
+        if semantics == "counter":
+            # Counters are monotonic odometers — compare rates, not raw values
+            rates_a = _compute_rates(samples_a.get(key, []))
+            rates_b = _compute_rates(samples_b.get(key, []))
+            stats_a = _compute_stats(rates_a)
+            stats_b = _compute_stats(rates_b)
+        else:
+            stats_a = _compute_stats(va)
+            stats_b = _compute_stats(vb)
 
         mean_change = stats_b["mean"] - stats_a["mean"]
         mean_change_pct = (mean_change / stats_a["mean"] * 100) if stats_a["mean"] != 0 else 0.0
@@ -89,6 +111,7 @@ async def _compare_windows_impl(
         comp: dict = {
             "metric": metric_name,
             "instance": instance_name,
+            "semantics": semantics,
             "window_a": stats_a,
             "window_b": stats_b,
             "delta": {
