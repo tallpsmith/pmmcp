@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 
 from pmmcp.client import PmproxyClient, PmproxyConnectionError, PmproxyError, PmproxyTimeoutError
 from pmmcp.server import get_client, get_session_db, mcp
@@ -13,6 +14,9 @@ from pmmcp.utils import natural_samples as compute_natural_samples
 from pmmcp.utils import resolve_interval
 
 logger = logging.getLogger(__name__)
+
+# PCP series IDs are 40-char lowercase hex (SHA-1)
+_SERIES_HASH_RE = re.compile(r"^[0-9a-f]{40}$")
 
 
 async def _fetch_timeseries_impl(
@@ -80,13 +84,14 @@ async def _fetch_timeseries_impl(
             )
             continue
 
-        logger.info(
-            "fetch_window returned %d keys for expr=%r",
-            len(raw_samples),
-            expression,
-        )
+        # Strip label filters from expression to get the base metric name
+        base_metric = expression.split("{")[0] if "{" in expression else expression
+
         for (metric_name, instance), samples in raw_samples.items():
-            logger.info("  key=(%r, %r) -> %d samples", metric_name, instance, len(samples))
+            # When labels don't resolve, _fetch_window falls back to
+            # the series hash ID. Substitute the known metric name.
+            if _SERIES_HASH_RE.match(metric_name):
+                metric_name = base_metric
             metrics_seen.add(metric_name)
             for sample in samples:
                 all_rows.append(
