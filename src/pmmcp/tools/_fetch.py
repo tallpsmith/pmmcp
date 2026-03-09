@@ -81,9 +81,7 @@ async def _fetch_metadata(
     return name_by_series, instance_name_by_series
 
 
-async def _fetch_descs(
-    client: PmproxyClient, series_ids: list[str]
-) -> dict[str, str]:
+async def _fetch_descs(client: PmproxyClient, series_ids: list[str]) -> dict[str, str]:
     """Fetch metric semantics from /series/descs, returning {series_id: semantics_str}.
 
     Swallows PmproxyError on failure — callers fall back to treating metrics

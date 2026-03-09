@@ -229,9 +229,7 @@ async def test_compare_windows_counter_metric_uses_rates(config):
     )
     respx.get(f"{PMPROXY_BASE}/series/instances").mock(return_value=httpx.Response(200, json=[]))
     respx.get(f"{PMPROXY_BASE}/series/descs").mock(
-        return_value=httpx.Response(
-            200, json=[{"series": TEST_SERIES, "semantics": "counter"}]
-        )
+        return_value=httpx.Response(200, json=[{"series": TEST_SERIES, "semantics": "counter"}])
     )
 
     client = PmproxyClient(config)
@@ -290,9 +288,7 @@ async def test_compare_windows_instant_metric_uses_raw_values(config):
     )
     respx.get(f"{PMPROXY_BASE}/series/instances").mock(return_value=httpx.Response(200, json=[]))
     respx.get(f"{PMPROXY_BASE}/series/descs").mock(
-        return_value=httpx.Response(
-            200, json=[{"series": TEST_SERIES, "semantics": "instant"}]
-        )
+        return_value=httpx.Response(200, json=[{"series": TEST_SERIES, "semantics": "instant"}])
     )
 
     client = PmproxyClient(config)
