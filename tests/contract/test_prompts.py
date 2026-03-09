@@ -157,14 +157,17 @@ def test_fleet_health_check_returns_messages():
     assert first.content.text, "First message content must be non-empty"
 
 
-def test_all_4_prompts_registered():
-    """All four prompts are registered with the MCP server (SC-001)."""
+def test_all_prompts_registered():
+    """All prompts are registered with the MCP server."""
     prompts = {p.name for p in srv.mcp._prompt_manager.list_prompts()}
     assert {
         "investigate_subsystem",
         "compare_periods",
         "fleet_health_check",
         "incident_triage",
+        "session_init",
+        "specialist_investigate",
+        "coordinate_investigation",
     } <= prompts
 
 
@@ -203,6 +206,72 @@ def test_session_init_registered():
 def test_session_init_returns_messages():
     """session_init returns a non-empty, well-formed message list."""
     result = asyncio.run(srv.mcp.get_prompt("session_init", {}))
+    assert result.messages, "Expected at least one message"
+    first = result.messages[0]
+    assert first.content.text, "First message content must be non-empty"
+
+
+# ---------------------------------------------------------------------------
+# specialist_investigate (T012)
+# ---------------------------------------------------------------------------
+
+
+def test_specialist_investigate_registered():
+    """specialist_investigate prompt is registered with the MCP server."""
+    prompts = {p.name for p in srv.mcp._prompt_manager.list_prompts()}
+    assert "specialist_investigate" in prompts
+
+
+def test_specialist_investigate_schema():
+    """specialist_investigate has correct required/optional argument schema."""
+    prompts = {p.name: p for p in srv.mcp._prompt_manager.list_prompts()}
+    p = prompts["specialist_investigate"]
+    args = {a.name: a for a in (p.arguments or [])}
+
+    assert "subsystem" in args
+    assert args["subsystem"].required is True
+
+    for optional_arg in ("request", "host", "time_of_interest", "lookback"):
+        assert optional_arg in args, f"{optional_arg} argument missing"
+        assert args[optional_arg].required is False
+
+
+def test_specialist_investigate_returns_messages():
+    """specialist_investigate returns well-formed messages for a valid subsystem."""
+    result = asyncio.run(srv.mcp.get_prompt("specialist_investigate", {"subsystem": "cpu"}))
+    assert result.messages, "Expected at least one message"
+    first = result.messages[0]
+    assert first.content.text, "First message content must be non-empty"
+
+
+# ---------------------------------------------------------------------------
+# coordinate_investigation (T021)
+# ---------------------------------------------------------------------------
+
+
+def test_coordinate_investigation_registered():
+    """coordinate_investigation prompt is registered with the MCP server."""
+    prompts = {p.name for p in srv.mcp._prompt_manager.list_prompts()}
+    assert "coordinate_investigation" in prompts
+
+
+def test_coordinate_investigation_schema():
+    """coordinate_investigation has correct required/optional argument schema."""
+    prompts = {p.name: p for p in srv.mcp._prompt_manager.list_prompts()}
+    p = prompts["coordinate_investigation"]
+    args = {a.name: a for a in (p.arguments or [])}
+
+    assert "request" in args
+    assert args["request"].required is True
+
+    for optional_arg in ("host", "time_of_interest", "lookback"):
+        assert optional_arg in args, f"{optional_arg} argument missing"
+        assert args[optional_arg].required is False
+
+
+def test_coordinate_investigation_returns_messages():
+    """coordinate_investigation returns well-formed messages."""
+    result = asyncio.run(srv.mcp.get_prompt("coordinate_investigation", {"request": "app is slow"}))
     assert result.messages, "Expected at least one message"
     first = result.messages[0]
     assert first.content.text, "First message content must be non-empty"

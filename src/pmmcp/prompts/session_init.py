@@ -87,6 +87,13 @@ For each metric, report whether registration and verification succeeded or faile
 
 **Do not abort if one or more verifications fail.** Report which metrics are available \
 and which are not, so downstream investigations know which derived metrics can be used.
+
+## Next Step — Investigation
+
+For broad performance investigations, use the `coordinate_investigation` prompt. \
+It dispatches 6 specialist sub-agents (cpu, memory, disk, network, process, crosscutting) \
+in parallel, then synthesises findings into a unified root-cause narrative. \
+This is the recommended entry point for any "something is wrong" investigation.
 """
 
     return [{"role": "user", "content": content}]
