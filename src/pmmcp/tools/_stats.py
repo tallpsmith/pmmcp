@@ -65,6 +65,11 @@ def _compute_rates(samples: list[dict]) -> list[float]:
     Each sample is ``{"timestamp": float, "value": float}``.  For consecutive
     pairs the rate is ``max(0, delta_v / delta_t)`` — clamped to zero on counter
     wraps.  Pairs with zero ``delta_t`` are silently skipped (avoids div-by-zero).
+
+    Client-side rate conversion because pmproxy's Series API (our only path to
+    historical windows) doesn't support ``rate()``.  The PMAPI surface has it via
+    ``/pmapi/derive``, but that's live-only.  See #33 for the upstream feature
+    request to add rate support to the Series API.
     """
     rates: list[float] = []
     for i in range(1, len(samples)):
