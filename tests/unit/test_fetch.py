@@ -46,6 +46,84 @@ def test_chunked_exact_multiple():
 # _fetch_window batching tests
 # ---------------------------------------------------------------------------
 
+TEST_SERIES = "605fc77742cd0317597291329561ac4e50c0dd12"
+
+
+# ---------------------------------------------------------------------------
+# _fetch_descs tests
+# ---------------------------------------------------------------------------
+
+
+class TestFetchDescs:
+    """Tests for _fetch_descs — fetches metric semantics from /series/descs."""
+
+    @respx.mock
+    async def test_returns_semantics_mapping(self, config):
+        """Happy path: maps series ID to its semantics string."""
+        respx.get(f"{PMPROXY_BASE}/series/descs").mock(
+            return_value=httpx.Response(
+                200,
+                json=[{"series": TEST_SERIES, "semantics": "counter"}],
+            )
+        )
+
+        client = PmproxyClient(config)
+        try:
+            from pmmcp.tools._fetch import _fetch_descs
+
+            result = await _fetch_descs(client, [TEST_SERIES])
+            assert result == {TEST_SERIES: "counter"}
+        finally:
+            await client.close()
+
+    @respx.mock
+    async def test_empty_input_returns_empty(self, config):
+        """No series IDs → no pmproxy call, empty dict."""
+        from pmmcp.tools._fetch import _fetch_descs
+
+        client = PmproxyClient(config)
+        try:
+            result = await _fetch_descs(client, [])
+            assert result == {}
+        finally:
+            await client.close()
+
+    @respx.mock
+    async def test_pmproxy_error_returns_empty(self, config):
+        """On pmproxy HTTP error, swallow and return empty dict."""
+        respx.get(f"{PMPROXY_BASE}/series/descs").mock(
+            return_value=httpx.Response(500, json={"message": "internal error"})
+        )
+
+        client = PmproxyClient(config)
+        try:
+            from pmmcp.tools._fetch import _fetch_descs
+
+            result = await _fetch_descs(client, [TEST_SERIES])
+            assert result == {}
+        finally:
+            await client.close()
+
+    @respx.mock
+    async def test_missing_semantics_defaults_to_instant(self, config):
+        """When descs response omits 'semantics', default to 'instant'."""
+        respx.get(f"{PMPROXY_BASE}/series/descs").mock(
+            return_value=httpx.Response(
+                200,
+                json=[{"series": TEST_SERIES}],
+            )
+        )
+
+        client = PmproxyClient(config)
+        try:
+            from pmmcp.tools._fetch import _fetch_descs
+
+            result = await _fetch_descs(client, [TEST_SERIES])
+            assert result == {TEST_SERIES: "instant"}
+        finally:
+            await client.close()
+
+
 SERIES_IDS = [f"series{i:04d}" for i in range(25)]
 
 
