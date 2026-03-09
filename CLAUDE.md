@@ -199,7 +199,7 @@ or invoke the Claude skill:
 /pre-push-sanity
 ```
 
-The check runs in order: lint → format → unit+integration tests (≥80% coverage). E2E tests run only if `PMPROXY_URL` is set; if not set, a warning is printed and E2E is skipped — but this MUST be noted in the PR description.
+The check runs in order: lint → format → unit+integration tests (≥80% coverage) → E2E tests (starts compose stack automatically via `just e2e`). E2E is **never skipped** — the compose stack must be buildable and all containers must pass healthchecks before tests run.
 <!-- MANUAL ADDITIONS END -->
 
 ## Active Technologies

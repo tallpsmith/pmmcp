@@ -139,7 +139,19 @@ async def _healthcheck_impl(client: PmproxyClient) -> Response:
 
 @mcp.custom_route("/healthcheck", methods=["GET"])
 async def healthcheck(request: Request) -> Response:
-    return await _healthcheck_impl(get_client())
+    if _client is None:
+        # Server is up but no MCP session has connected yet (HTTP mode)
+        # or lifespan hasn't run (stdio pre-connect).  Return 200 — the
+        # HTTP transport is healthy and ready to accept connections.
+        return JSONResponse(
+            {
+                "status": "starting",
+                "connection_ok": False,
+                "pmmcp_version": __version__,
+            },
+            status_code=200,
+        )
+    return await _healthcheck_impl(_client)
 
 
 # Side-effect imports: triggers @mcp.tool registration for all tool modules.
