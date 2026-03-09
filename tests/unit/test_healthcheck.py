@@ -72,3 +72,25 @@ async def test_healthcheck_error_message_propagated():
 
     data = json.loads(response.body)
     assert data["error"] == "timed out after 5s"
+
+
+async def test_healthcheck_returns_starting_when_client_is_none():
+    """Before any MCP session connects (HTTP mode), healthcheck returns 503 starting."""
+    from starlette.testclient import TestClient
+
+    import pmmcp.server as srv
+
+    # Temporarily set _client to None (simulates pre-session state)
+    original = srv._client
+    srv._client = None
+    try:
+        from starlette.requests import Request
+        from starlette.responses import Response
+
+        response = await srv.healthcheck(Request(scope={"type": "http"}))
+        assert response.status_code == 503
+        data = json.loads(response.body)
+        assert data["status"] == "starting"
+        assert data["pmmcp_version"] == __version__
+    finally:
+        srv._client = original

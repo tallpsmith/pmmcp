@@ -56,7 +56,9 @@ def main() -> None:
     srv._config = PmproxyConfig(**kwargs)
 
     if args.transport == "streamable-http":
-        srv.mcp.run(transport="streamable-http", host=args.host, port=args.port)
+        srv.mcp.settings.host = args.host
+        srv.mcp.settings.port = args.port
+        srv.mcp.run(transport="streamable-http")
     else:
         srv.mcp.run(transport="stdio")
 
