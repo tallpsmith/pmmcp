@@ -44,6 +44,7 @@ async def test_compare_windows_happy_path(mcp_session):
             )
         )
         mock.get("/series/instances").mock(return_value=httpx.Response(200, json=[]))
+        mock.get("/series/descs").mock(return_value=httpx.Response(200, json=[]))
 
         result = await mcp_session.call_tool(
             "pcp_compare_windows",
