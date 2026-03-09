@@ -80,7 +80,15 @@ async def _fetch_timeseries_impl(
             )
             continue
 
+        logger.info(
+            "fetch_window returned %d keys for expr=%r",
+            len(raw_samples),
+            expression,
+        )
         for (metric_name, instance), samples in raw_samples.items():
+            logger.info(
+                "  key=(%r, %r) -> %d samples", metric_name, instance, len(samples)
+            )
             metrics_seen.add(metric_name)
             for sample in samples:
                 all_rows.append(
