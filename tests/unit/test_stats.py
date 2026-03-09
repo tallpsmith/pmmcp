@@ -152,6 +152,68 @@ class TestOutlierFlag:
         assert flags[-2] is True
 
 
+class TestComputeRates:
+    """Tests for _compute_rates — converts timestamped counter samples to per-second rates."""
+
+    def test_empty_samples_returns_empty(self):
+        from pmmcp.tools._stats import _compute_rates
+
+        assert _compute_rates([]) == []
+
+    def test_single_sample_returns_empty(self):
+        from pmmcp.tools._stats import _compute_rates
+
+        assert _compute_rates([{"timestamp": 0.0, "value": 100.0}]) == []
+
+    def test_monotonic_counter_rate(self):
+        """600 units over 60 seconds = 10.0 per second."""
+        from pmmcp.tools._stats import _compute_rates
+
+        samples = [
+            {"timestamp": 0.0, "value": 0.0},
+            {"timestamp": 60.0, "value": 600.0},
+        ]
+        rates = _compute_rates(samples)
+        assert len(rates) == 1
+        assert abs(rates[0] - 10.0) < 1e-9
+
+    def test_counter_wrap_clamps_to_zero(self):
+        """When counter value decreases (wrap), rate should be 0.0."""
+        from pmmcp.tools._stats import _compute_rates
+
+        samples = [
+            {"timestamp": 0.0, "value": 1000.0},
+            {"timestamp": 60.0, "value": 500.0},
+        ]
+        rates = _compute_rates(samples)
+        assert len(rates) == 1
+        assert rates[0] == 0.0
+
+    def test_zero_dt_skipped(self):
+        """Pairs with identical timestamps are skipped to avoid division by zero."""
+        from pmmcp.tools._stats import _compute_rates
+
+        samples = [
+            {"timestamp": 100.0, "value": 0.0},
+            {"timestamp": 100.0, "value": 10.0},
+            {"timestamp": 160.0, "value": 70.0},
+        ]
+        rates = _compute_rates(samples)
+        # First pair skipped (dt=0), second pair: (70-10)/60 = 1.0
+        assert len(rates) == 1
+        assert abs(rates[0] - 1.0) < 1e-9
+
+    def test_steady_rate_uniform_output(self):
+        """A counter incrementing at a constant rate produces uniform rates."""
+        from pmmcp.tools._stats import _compute_rates
+
+        samples = [{"timestamp": float(i * 60), "value": float(i * 120)} for i in range(5)]
+        rates = _compute_rates(samples)
+        assert len(rates) == 4
+        for r in rates:
+            assert abs(r - 2.0) < 1e-9  # 120/60 = 2.0 per second
+
+
 class TestExpandTimeUnitsInUtils:
     """Verify _expand_time_units was correctly relocated to utils."""
 
