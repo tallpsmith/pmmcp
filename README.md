@@ -166,7 +166,64 @@ Add to `.mcp.json`:
 }
 ```
 
-Add `"--timeout", "60"` to `args` if you need a longer HTTP timeout (default: 30s).
+See **Running pmmcp** below for all CLI flags and environment variables.
+
+## Running pmmcp
+
+### CLI flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--pmproxy-url` | _(env)_ | pmproxy base URL; overrides `PMPROXY_URL` |
+| `--timeout` | `30.0` | HTTP request timeout in seconds |
+| `--transport` | `stdio` | MCP transport: `stdio` or `streamable-http` |
+| `--host` | `127.0.0.1` | Bind host for HTTP transport |
+| `--port` | `8080` | Bind port for HTTP transport |
+
+### Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PMPROXY_URL` | _(required)_ | pmproxy base URL |
+| `PMPROXY_TIMEOUT` | `30.0` | HTTP request timeout in seconds |
+| `PMMCP_TRANSPORT` | `stdio` | MCP transport mode |
+| `PMMCP_HOST` | `127.0.0.1` | Bind host for HTTP transport |
+| `PMMCP_PORT` | `8080` | Bind port for HTTP transport |
+
+**Precedence:** CLI flag > environment variable > default.
+
+### HTTP transport
+
+For shared team access, run pmmcp in HTTP mode:
+
+```bash
+# Direct
+uv run pmmcp --transport streamable-http --host 0.0.0.0 --port 8080 --pmproxy-url http://your-pmproxy:44322
+
+# Docker
+docker run -e PMPROXY_URL=http://your-pmproxy:44322 pmmcp:latest
+
+# Compose (includes full PCP stack)
+docker compose up -d
+```
+
+MCP client config for a remote pmmcp server:
+
+```json
+{
+  "mcpServers": {
+    "pmmcp": {
+      "url": "http://pmmcp-host:8080/mcp"
+    }
+  }
+}
+```
+
+The `/healthcheck` endpoint (HTTP mode only) returns JSON with pmproxy connectivity status:
+
+```bash
+curl http://localhost:8080/healthcheck
+```
 
 ## Contributing
 
