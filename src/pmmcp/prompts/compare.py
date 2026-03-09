@@ -44,7 +44,7 @@ You are performing a before/after performance comparison.{context_clause}
 ## Guard Clauses — Check Before Proceeding
 
 1. **Missing tool abort**: If any required tool (pcp_get_hosts, pcp_discover_metrics, \
-pcp_fetch_timeseries, pcp_compare_windows, pcp_query_series) is missing or unavailable, \
+pcp_fetch_timeseries, pcp_compare_windows, pcp_query_sqlite) is missing or unavailable, \
 stop immediately and report which tool is absent. Do not attempt the comparison without it.
 
 2. **Overlap detection — stop**: Before fetching any data, verify that the baseline and \

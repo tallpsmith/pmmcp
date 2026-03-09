@@ -66,7 +66,7 @@ You are conducting a **{subsystem}** performance investigation\
 ## Guard Clauses — Check Before Proceeding
 
 1. **Missing tool abort**: If any required tool (pcp_get_hosts, pcp_discover_metrics, \
-pcp_fetch_timeseries, pcp_query_series) is missing or unavailable, stop immediately and \
+pcp_fetch_timeseries, pcp_query_sqlite) is missing or unavailable, stop immediately and \
 report which tool is absent. Do not attempt the investigation without it.
 
 2. **No metrics found — stop**: After discovery, if no metrics are found in the target \
