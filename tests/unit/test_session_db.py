@@ -52,12 +52,18 @@ async def test_close_without_delete_keeps_file(tmp_path):
 async def test_insert_and_query(db):
     """Can insert rows and query them back."""
     await db.insert_timeseries([
-        {"metric": "cpu.user", "instance": None, "host": "web-01", "timestamp": 1000.0, "value": 42.5},
-        {"metric": "cpu.user", "instance": None, "host": "web-01", "timestamp": 1001.0, "value": 43.0},
-        {"metric": "mem.free", "instance": None, "host": "web-01", "timestamp": 1000.0, "value": 8192.0},
+        {"metric": "cpu.user", "instance": None, "host": "web-01",
+         "timestamp": 1000.0, "value": 42.5},
+        {"metric": "cpu.user", "instance": None, "host": "web-01",
+         "timestamp": 1001.0, "value": 43.0},
+        {"metric": "mem.free", "instance": None, "host": "web-01",
+         "timestamp": 1000.0, "value": 8192.0},
     ])
 
-    rows = await db.query("SELECT metric, AVG(value) as avg_val FROM timeseries GROUP BY metric ORDER BY metric")
+    rows = await db.query(
+        "SELECT metric, AVG(value) as avg_val FROM timeseries"
+        " GROUP BY metric ORDER BY metric"
+    )
     assert len(rows) == 2
     assert rows[0]["metric"] == "cpu.user"
     assert abs(rows[0]["avg_val"] - 42.75) < 0.01
