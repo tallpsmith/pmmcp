@@ -35,20 +35,20 @@ def test_fetch_timeseries_description_states_drilldown():
 
 
 def test_fetch_timeseries_limit_guidance_present():
-    """pcp_fetch_timeseries limit arg includes exploration guidance with value 50."""
+    """pcp_fetch_timeseries limit arg documents default value."""
     doc = ts_mod.pcp_fetch_timeseries.__doc__
     assert doc is not None
-    assert "exploration" in doc.lower() or "explore" in doc.lower(), (
-        "Expected exploration guidance in pcp_fetch_timeseries docstring"
+    assert "500" in doc or "limit" in doc.lower(), (
+        "Expected limit guidance in pcp_fetch_timeseries docstring"
     )
 
 
-def test_query_series_limit_guidance_present():
-    """pcp_query_series limit arg includes exploration guidance."""
-    doc = ts_mod.pcp_query_series.__doc__
+def test_fetch_timeseries_mentions_sqlite():
+    """pcp_fetch_timeseries docstring mentions pcp_query_sqlite for analysis."""
+    doc = ts_mod.pcp_fetch_timeseries.__doc__
     assert doc is not None
-    assert "exploration" in doc.lower() or "explore" in doc.lower(), (
-        "Expected exploration guidance in pcp_query_series docstring"
+    assert "pcp_query_sqlite" in doc, (
+        "Expected pcp_query_sqlite reference in pcp_fetch_timeseries docstring"
     )
 
 

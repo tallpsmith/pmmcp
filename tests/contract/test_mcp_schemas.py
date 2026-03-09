@@ -10,7 +10,6 @@ EXPECTED_TOOLS = {
     "pcp_get_metric_info",
     "pcp_fetch_live",
     "pcp_fetch_timeseries",
-    "pcp_query_series",
     "pcp_compare_windows",
     "pcp_search",
     "pcp_derive_metric",
