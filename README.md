@@ -103,7 +103,7 @@ podman compose down --volumes
 
 ## What It Does
 
-pmmcp gives AI agents 9 MCP tools and 4 MCP prompt templates for performance investigation.
+pmmcp gives AI agents 9 MCP tools and 7 MCP prompt templates for performance investigation. See [Investigation Flow Architecture](docs/investigation-flow.md) for how the coordinator-specialist pattern works.
 
 **Tools**
 
@@ -127,6 +127,9 @@ tools, no-metrics-found, and out-of-retention timeranges.
 
 | Prompt | Required args | Optional args | What it does |
 |--------|--------------|---------------|--------------|
+| `session_init` | _(none)_ | `host`, `timerange` | Registers derived metrics, then points to `coordinate_investigation` |
+| `coordinate_investigation` | `request` | `host`, `time_of_interest`, `lookback` | Dispatches 6 specialists in parallel, synthesises unified root-cause narrative |
+| `specialist_investigate` | `subsystem` | `request`, `host`, `time_of_interest`, `lookback` | Deep domain-expert investigation for one subsystem |
 | `investigate_subsystem` | `subsystem` | `host`, `timerange`, `symptom` | Discovery-first investigation of a single subsystem (cpu, memory, disk, network, process, or general) |
 | `incident_triage` | `symptom` | `host`, `timerange` | Maps a symptom to likely subsystems, confirms host-specific vs fleet-wide scope, delivers ranked findings with recommended actions |
 | `compare_periods` | `baseline_start`, `baseline_end`, `comparison_start`, `comparison_end` | `host`, `subsystem`, `context` | Broad-scan comparison between two time windows, ranked by magnitude of change, with root-cause hypothesis |
