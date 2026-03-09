@@ -74,20 +74,24 @@ async def _fetch_timeseries_impl(
             continue
         except PmproxyError as exc:
             last_error = _mcp_error(
-                "pmproxy error", str(exc), "Check the metric name or expression.",
+                "pmproxy error",
+                str(exc),
+                "Check the metric name or expression.",
             )
             continue
 
         for (metric_name, instance), samples in raw_samples.items():
             metrics_seen.add(metric_name)
             for sample in samples:
-                all_rows.append({
-                    "metric": metric_name,
-                    "instance": instance,
-                    "host": host or None,
-                    "timestamp": sample["timestamp"],
-                    "value": sample["value"],
-                })
+                all_rows.append(
+                    {
+                        "metric": metric_name,
+                        "instance": instance,
+                        "host": host or None,
+                        "timestamp": sample["timestamp"],
+                        "value": sample["value"],
+                    }
+                )
 
     if not all_rows and last_error:
         return last_error

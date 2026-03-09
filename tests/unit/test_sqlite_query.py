@@ -10,16 +10,38 @@ from pmmcp.tools.sqlite_sink import _query_sqlite_impl
 async def session_db(tmp_path):
     db = SessionDB(tmp_path / "test.db")
     await db.open()
-    await db.insert_timeseries([
-        {"metric": "cpu.user", "instance": None, "host": "web-01",
-         "timestamp": 1000.0, "value": 10.0},
-        {"metric": "cpu.user", "instance": None, "host": "web-01",
-         "timestamp": 1001.0, "value": 20.0},
-        {"metric": "cpu.user", "instance": None, "host": "web-01",
-         "timestamp": 1002.0, "value": 30.0},
-        {"metric": "mem.free", "instance": None, "host": "web-01",
-         "timestamp": 1000.0, "value": 8192.0},
-    ])
+    await db.insert_timeseries(
+        [
+            {
+                "metric": "cpu.user",
+                "instance": None,
+                "host": "web-01",
+                "timestamp": 1000.0,
+                "value": 10.0,
+            },
+            {
+                "metric": "cpu.user",
+                "instance": None,
+                "host": "web-01",
+                "timestamp": 1001.0,
+                "value": 20.0,
+            },
+            {
+                "metric": "cpu.user",
+                "instance": None,
+                "host": "web-01",
+                "timestamp": 1002.0,
+                "value": 30.0,
+            },
+            {
+                "metric": "mem.free",
+                "instance": None,
+                "host": "web-01",
+                "timestamp": 1000.0,
+                "value": 8192.0,
+            },
+        ]
+    )
     yield db
     await db.close(delete=True)
 

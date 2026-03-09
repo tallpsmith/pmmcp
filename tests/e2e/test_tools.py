@@ -119,9 +119,7 @@ async def test_discover_metrics_search(e2e_session):
 @pytest.mark.e2e
 async def test_get_metric_info(e2e_session):
     """pcp_get_metric_info returns metadata for kernel.all.load from real PCP."""
-    result = await e2e_session.call_tool(
-        "pcp_get_metric_info", {"names": ["kernel.all.load"]}
-    )
+    result = await e2e_session.call_tool("pcp_get_metric_info", {"names": ["kernel.all.load"]})
     assert not result.isError, f"MCP error: {result.content[0].text}"
     data = json.loads(result.content[0].text)
     # Response may be a list or dict depending on tool version

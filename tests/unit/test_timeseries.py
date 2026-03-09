@@ -54,9 +54,7 @@ def _mock_series_endpoints(series_id: str, metric_name: str, count: int = 3):
             200, json=[{"series": series_id, "labels": {"metric.name": metric_name}}]
         )
     )
-    respx.get(f"{PMPROXY_BASE}/series/instances").mock(
-        return_value=httpx.Response(200, json=[])
-    )
+    respx.get(f"{PMPROXY_BASE}/series/instances").mock(return_value=httpx.Response(200, json=[]))
 
 
 @respx.mock
@@ -67,10 +65,17 @@ async def test_fetch_writes_to_sqlite(client, session_db):
     from pmmcp.tools.timeseries import _fetch_timeseries_impl
 
     result = await _fetch_timeseries_impl(
-        client, session_db,
+        client,
+        session_db,
         names=["kernel.all.load"],
-        start="-1hour", end="now", interval="auto",
-        host="", instances=[], limit=500, offset=0, expr="",
+        start="-1hour",
+        end="now",
+        interval="auto",
+        host="",
+        instances=[],
+        limit=500,
+        offset=0,
+        expr="",
     )
     assert not result.get("isError"), f"Got error: {result}"
     assert "row_count" in result
@@ -95,10 +100,17 @@ async def test_fetch_returns_window_metadata(client, session_db):
     from pmmcp.tools.timeseries import _fetch_timeseries_impl
 
     result = await _fetch_timeseries_impl(
-        client, session_db,
+        client,
+        session_db,
         names=["cpu.user"],
-        start="-1hour", end="now", interval="15s",
-        host="", instances=[], limit=500, offset=0, expr="",
+        start="-1hour",
+        end="now",
+        interval="15s",
+        host="",
+        instances=[],
+        limit=500,
+        offset=0,
+        expr="",
     )
     assert "window" in result
     assert result["window"]["start"] == "-1hour"
@@ -114,10 +126,17 @@ async def test_fetch_auto_interval_resolved(client, session_db):
     from pmmcp.tools.timeseries import _fetch_timeseries_impl
 
     await _fetch_timeseries_impl(
-        client, session_db,
+        client,
+        session_db,
         names=["kernel.all.load"],
-        start="-1hour", end="now", interval="auto",
-        host="", instances=[], limit=500, offset=0, expr="",
+        start="-1hour",
+        end="now",
+        interval="auto",
+        host="",
+        instances=[],
+        limit=500,
+        offset=0,
+        expr="",
     )
     for call in respx.calls:
         if "/series/values" in str(call.request.url):
@@ -148,10 +167,17 @@ async def test_fetch_multi_metric_queries_separately(client, session_db):
     from pmmcp.tools.timeseries import _fetch_timeseries_impl
 
     result = await _fetch_timeseries_impl(
-        client, session_db,
+        client,
+        session_db,
         names=["cpu.user", "cpu.sys"],
-        start="-1hour", end="now", interval="5min",
-        host="", instances=[], limit=500, offset=0, expr="",
+        start="-1hour",
+        end="now",
+        interval="5min",
+        host="",
+        instances=[],
+        limit=500,
+        offset=0,
+        expr="",
     )
     assert query_route.call_count == 2
     assert result["row_count"] == 6
@@ -165,10 +191,16 @@ async def test_fetch_with_expr_overrides_names(client, session_db):
     from pmmcp.tools.timeseries import _fetch_timeseries_impl
 
     result = await _fetch_timeseries_impl(
-        client, session_db,
+        client,
+        session_db,
         names=[],
-        start="-1hour", end="now", interval="15s",
-        host="", instances=[], limit=500, offset=0,
+        start="-1hour",
+        end="now",
+        interval="15s",
+        host="",
+        instances=[],
+        limit=500,
+        offset=0,
         expr='kernel.percpu.cpu.user{hostname=="web-01"}',
     )
     assert not result.get("isError"), f"Got error: {result}"
@@ -186,10 +218,17 @@ async def test_fetch_accumulates_across_calls(client, session_db):
     from pmmcp.tools.timeseries import _fetch_timeseries_impl
 
     await _fetch_timeseries_impl(
-        client, session_db,
+        client,
+        session_db,
         names=["metric.a"],
-        start="-1hour", end="now", interval="15s",
-        host="", instances=[], limit=500, offset=0, expr="",
+        start="-1hour",
+        end="now",
+        interval="15s",
+        host="",
+        instances=[],
+        limit=500,
+        offset=0,
+        expr="",
     )
 
     SERIES_B = "b" * 40
@@ -197,10 +236,17 @@ async def test_fetch_accumulates_across_calls(client, session_db):
     _mock_series_endpoints(SERIES_B, "metric.b", count=3)
 
     await _fetch_timeseries_impl(
-        client, session_db,
+        client,
+        session_db,
         names=["metric.b"],
-        start="-1hour", end="now", interval="15s",
-        host="", instances=[], limit=500, offset=0, expr="",
+        start="-1hour",
+        end="now",
+        interval="15s",
+        host="",
+        instances=[],
+        limit=500,
+        offset=0,
+        expr="",
     )
 
     rows = await session_db.query("SELECT COUNT(*) as cnt FROM timeseries")
@@ -217,10 +263,17 @@ async def test_fetch_connection_error_returns_mcp_error(client, session_db):
     from pmmcp.tools.timeseries import _fetch_timeseries_impl
 
     result = await _fetch_timeseries_impl(
-        client, session_db,
+        client,
+        session_db,
         names=["cpu.user"],
-        start="-1hour", end="now", interval="15s",
-        host="", instances=[], limit=500, offset=0, expr="",
+        start="-1hour",
+        end="now",
+        interval="15s",
+        host="",
+        instances=[],
+        limit=500,
+        offset=0,
+        expr="",
     )
     assert result.get("isError") is True
     text = result["content"][0]["text"]
@@ -230,17 +283,22 @@ async def test_fetch_connection_error_returns_mcp_error(client, session_db):
 @respx.mock
 async def test_fetch_timeout_returns_mcp_error(client, session_db):
     """Timeout is surfaced as MCP error."""
-    respx.get(f"{PMPROXY_BASE}/series/query").mock(
-        side_effect=httpx.ReadTimeout("Timeout")
-    )
+    respx.get(f"{PMPROXY_BASE}/series/query").mock(side_effect=httpx.ReadTimeout("Timeout"))
 
     from pmmcp.tools.timeseries import _fetch_timeseries_impl
 
     result = await _fetch_timeseries_impl(
-        client, session_db,
+        client,
+        session_db,
         names=["cpu.user"],
-        start="-1hour", end="now", interval="15s",
-        host="", instances=[], limit=500, offset=0, expr="",
+        start="-1hour",
+        end="now",
+        interval="15s",
+        host="",
+        instances=[],
+        limit=500,
+        offset=0,
+        expr="",
     )
     assert result.get("isError") is True
     text = result["content"][0]["text"]
@@ -255,12 +313,20 @@ async def test_fetch_natural_sample_cap(client, session_db):
     from pmmcp.tools.timeseries import _fetch_timeseries_impl
 
     await _fetch_timeseries_impl(
-        client, session_db,
+        client,
+        session_db,
         names=["cpu.user"],
-        start="-1hour", end="now", interval="15s",
-        host="", instances=[], limit=500, offset=0, expr="",
+        start="-1hour",
+        end="now",
+        interval="15s",
+        host="",
+        instances=[],
+        limit=500,
+        offset=0,
+        expr="",
     )
     import re
+
     for call in respx.calls:
         if "/series/values" in str(call.request.url):
             url_str = str(call.request.url)

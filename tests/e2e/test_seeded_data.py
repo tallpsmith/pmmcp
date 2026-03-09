@@ -19,9 +19,7 @@ import pytest
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 
-async def _fetch_and_query(
-    session, expr: str, sql: str, start: str = "-90minutes"
-) -> list[dict]:
+async def _fetch_and_query(session, expr: str, sql: str, start: str = "-90minutes") -> list[dict]:
     """Load data via pcp_fetch_timeseries, then query via pcp_query_sqlite."""
     fetch = await session.call_tool(
         "pcp_fetch_timeseries",
@@ -142,6 +140,4 @@ async def test_both_profiles_data_present(e2e_session):
     # Note: if instances aren't populated, at minimum we should have data present
     # The key assertion is that data exists from multiple profiles
     distinct = rows[0]["distinct_instances"]
-    assert distinct >= 1, (
-        f"Expected data from seeded profiles, got {distinct} distinct instance(s)"
-    )
+    assert distinct >= 1, f"Expected data from seeded profiles, got {distinct} distinct instance(s)"
