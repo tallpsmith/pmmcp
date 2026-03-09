@@ -59,6 +59,23 @@ def pearson_correlation(xs: list[float], ys: list[float]) -> float:
     return cov / denom
 
 
+def _compute_rates(samples: list[dict]) -> list[float]:
+    """Convert timestamped counter samples to per-second rate-of-change values.
+
+    Each sample is ``{"timestamp": float, "value": float}``.  For consecutive
+    pairs the rate is ``max(0, delta_v / delta_t)`` — clamped to zero on counter
+    wraps.  Pairs with zero ``delta_t`` are silently skipped (avoids div-by-zero).
+    """
+    rates: list[float] = []
+    for i in range(1, len(samples)):
+        dt = samples[i]["timestamp"] - samples[i - 1]["timestamp"]
+        if dt == 0.0:
+            continue
+        dv = samples[i]["value"] - samples[i - 1]["value"]
+        rates.append(max(0.0, dv / dt))
+    return rates
+
+
 def outlier_flag(values: list[float], threshold: float = 2.0) -> list[bool]:
     """Flag values that deviate more than *threshold* standard deviations from the mean.
 
