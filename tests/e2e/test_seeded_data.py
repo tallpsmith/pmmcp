@@ -127,18 +127,14 @@ async def test_steady_state_cpu_in_baseline_range(e2e_session):
 
 @pytest.mark.e2e
 async def test_both_profiles_data_present(e2e_session):
-    """At least 2 distinct series items appear — one per seeded profile."""
+    """Multiple seeded profiles contribute data — row count reflects both."""
     rows = await _fetch_and_query(
         e2e_session,
         expr="kernel.all.cpu.user",
-        sql=(
-            "SELECT COUNT(DISTINCT instance) AS distinct_instances "
-            "FROM timeseries WHERE metric = 'kernel.all.cpu.user'"
-        ),
+        sql="SELECT COUNT(*) AS cnt FROM timeseries WHERE metric = 'kernel.all.cpu.user'",
     )
     assert len(rows) > 0, "Expected query results"
-    # Each profile seeds its own hostname → distinct series IDs → distinct instances or hosts
-    # Note: if instances aren't populated, at minimum we should have data present
-    # The key assertion is that data exists from multiple profiles
-    distinct = rows[0]["distinct_instances"]
-    assert distinct >= 1, f"Expected data from seeded profiles, got {distinct} distinct instance(s)"
+    # Two profiles × ~13 samples each at 5min interval over 90 min.
+    # A single profile would give ~13 rows; two profiles give ~26.
+    cnt = rows[0]["cnt"]
+    assert cnt > 15, f"Expected data from multiple profiles (>15 rows), got {cnt}"
