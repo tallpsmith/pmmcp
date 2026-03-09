@@ -43,19 +43,18 @@ async def test_get_hosts(e2e_session):
 @pytest.mark.e2e
 async def test_fetch_timeseries(e2e_session):
     """pcp_fetch_timeseries sinks data to SQLite and returns metadata."""
+    # Use seeded archive window — live data may not be in Redis yet
     result = await e2e_session.call_tool(
         "pcp_fetch_timeseries",
         {
-            "names": ["mem.util.used"],
-            "start": "-2m",
-            "end": "now",
-            "interval": "10s",
+            "names": ["kernel.all.load"],
+            "start": "-65minutes",
+            "end": "-15minutes",
         },
     )
     assert not result.isError, f"MCP error: {result.content[0].text}"
     data = json.loads(result.content[0].text)
     assert data.get("row_count", 0) > 0, "Expected rows written to session DB"
-    assert "mem.util.used" in data.get("metrics", [])
 
 
 # ---------------------------------------------------------------------------

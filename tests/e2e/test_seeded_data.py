@@ -23,7 +23,7 @@ async def _fetch_and_query(session, expr: str, sql: str, start: str = "-90minute
     """Load data via pcp_fetch_timeseries, then query via pcp_query_sqlite."""
     fetch = await session.call_tool(
         "pcp_fetch_timeseries",
-        {"expr": expr, "start": start, "end": "now", "interval": "60s"},
+        {"expr": expr, "start": start, "end": "now"},
     )
     assert not fetch.isError, f"Fetch error: {fetch.content[0].text}"
 
@@ -92,6 +92,7 @@ async def test_spike_pattern_detected(e2e_session):
     )
     assert len(rows) > 0, "Expected timeseries data from spike profile"
     peak = rows[0]["peak"]
+    assert peak is not None, "No data points found for kernel.all.cpu.user"
     # For normalized utilization values [0,1]: spike phase (90% CPU) should exceed 0.85.
     # For raw counter values (ms): all values vastly exceed 0.85 — trivially passes.
     assert peak > 0.85, (
