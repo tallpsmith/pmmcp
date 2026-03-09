@@ -208,6 +208,8 @@ The check runs in order: lint → format → unit+integration tests (≥80% cove
 - Named volume `pmmcp-archives` (ephemeral; purged on `compose down --volumes`) (004-pmlogsynth-integration)
 - Python 3.11+ + `mcp[cli]` >=1.2.0 (FastMCP), `pydantic` v2.x, `httpx` >=0.27 (006-quick-investigate)
 - N/A — stateless tool; no persistence (006-quick-investigate)
+- Python 3.11+ + `mcp[cli]` ≥1.2.0 (FastMCP), `pydantic` v2.x — no new dependencies (010-specialist-agents)
+- N/A — prompts are stateless text generators (010-specialist-agents)
 
 ## Recent Changes
 - 002-add-integration-e2e-tests: Added Python 3.11+ + `mcp[cli]` ≥1.26.0 (FastMCP + ClientSession), `anyio` (memory streams), `respx` (already present — mocks httpx for integration tier), `pytest-asyncio` (already present)

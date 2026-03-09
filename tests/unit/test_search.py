@@ -186,3 +186,18 @@ async def test_search_pagination(config):
         assert result["total"] == 100
     finally:
         await client.close()
+
+
+# ---------------------------------------------------------------------------
+# T022: pcp_search default limit is 50
+# ---------------------------------------------------------------------------
+
+
+def test_search_default_limit_is_50():
+    """pcp_search tool default limit is 50 (FR-007)."""
+    import inspect
+
+    from pmmcp.tools.search import pcp_search
+
+    sig = inspect.signature(pcp_search)
+    assert sig.parameters["limit"].default == 50

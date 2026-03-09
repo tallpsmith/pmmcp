@@ -85,3 +85,17 @@ def test_all_three_expressions_present():
     assert "kernel.all.cpu.idle" in full_text or "derived.cpu.utilisation" in full_text
     assert "disk.all.avactive" in full_text or "derived.disk.utilisation" in full_text
     assert "mem.util.used" in full_text or "derived.mem.utilisation" in full_text
+
+
+# ---------------------------------------------------------------------------
+# T024: session_init references coordinate_investigation
+# ---------------------------------------------------------------------------
+
+
+def test_session_init_references_coordinate_investigation():
+    """session_init content references coordinate_investigation as entry point."""
+    result = _session_init_impl()
+    full_text = " ".join(msg["content"] for msg in result)
+    assert "coordinate_investigation" in full_text, (
+        "session_init must reference coordinate_investigation as investigation entry point"
+    )
