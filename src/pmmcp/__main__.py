@@ -8,6 +8,10 @@ import sys
 def main() -> None:
     logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
+    from pmmcp.config import ServerConfig
+
+    server_cfg = ServerConfig()
+
     parser = argparse.ArgumentParser(
         description="pmmcp — MCP server for PCP (Performance Co-Pilot) via pmproxy"
     )
@@ -25,19 +29,19 @@ def main() -> None:
     parser.add_argument(
         "--transport",
         choices=["stdio", "streamable-http"],
-        default="stdio",
-        help="MCP transport (default: stdio)",
+        default=server_cfg.transport,
+        help="MCP transport (default: from PMMCP_TRANSPORT or stdio)",
     )
     parser.add_argument(
         "--host",
-        default="127.0.0.1",
-        help="Bind host for HTTP transport (default: 127.0.0.1)",
+        default=server_cfg.host,
+        help="Bind host for HTTP transport (default: from PMMCP_HOST or 127.0.0.1)",
     )
     parser.add_argument(
         "--port",
         type=int,
-        default=8080,
-        help="Bind port for HTTP transport (default: 8080)",
+        default=server_cfg.port,
+        help="Bind port for HTTP transport (default: from PMMCP_PORT or 8080)",
     )
     args = parser.parse_args()
 
