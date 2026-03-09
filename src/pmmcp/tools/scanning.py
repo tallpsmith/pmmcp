@@ -7,7 +7,7 @@ import logging
 from pmmcp.client import PmproxyClient, PmproxyConnectionError, PmproxyError, PmproxyTimeoutError
 from pmmcp.server import get_client, mcp
 from pmmcp.tools._errors import _mcp_error
-from pmmcp.tools._fetch import _fetch_window
+from pmmcp.tools._fetch import _fetch_window, _resolve_series_ids
 from pmmcp.tools._stats import _compute_stats
 from pmmcp.utils import resolve_interval
 
@@ -35,11 +35,24 @@ async def _scan_changes_impl(
         expr = f"{metric_prefix}.*"
 
     try:
+        series_ids = await _resolve_series_ids(client, [expr])
         baseline_vals, _ = await _fetch_window(
-            client, expr, baseline_start, baseline_end, resolved, 500
+            client,
+            exprs=[],
+            start=baseline_start,
+            end=baseline_end,
+            interval=resolved,
+            limit=500,
+            series_ids=series_ids,
         )
         comparison_vals, _ = await _fetch_window(
-            client, expr, comparison_start, comparison_end, resolved, 500
+            client,
+            exprs=[],
+            start=comparison_start,
+            end=comparison_end,
+            interval=resolved,
+            limit=500,
+            series_ids=series_ids,
         )
     except PmproxyConnectionError as exc:
         return _mcp_error("Connection error", str(exc), "Check pmproxy connectivity.")
@@ -116,8 +129,10 @@ async def pcp_scan_changes(
 ) -> dict | list:
     """Scan a metric namespace for significant changes between two time windows.
 
-    Inspired by pmdiff — discovers all metrics under a prefix, fetches both
-    windows, and returns those whose mean changed by more than ratio_threshold.
+    For scanning broad changes in a metric prefix. For discovery, start with
+    pcp_quick_investigate. Inspired by pmdiff — discovers all metrics under a
+    prefix, fetches both windows, and returns those whose mean changed by more
+    than ratio_threshold.
 
     Args:
         metric_prefix: Metric namespace prefix to scan (e.g. 'kernel', 'mem')

@@ -5,7 +5,9 @@ import logging
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import TYPE_CHECKING
+from uuid import uuid4
 
 from mcp.server.fastmcp import FastMCP
 from starlette.requests import Request
@@ -13,6 +15,7 @@ from starlette.responses import JSONResponse, Response
 
 from pmmcp import __version__
 from pmmcp.client import PmproxyClient
+from pmmcp.session_db import SessionDB
 
 if TYPE_CHECKING:
     from pmmcp.config import PmproxyConfig
@@ -22,6 +25,7 @@ logger = logging.getLogger(__name__)
 # Module-level config and client; set before mcp.run() is called
 _config: PmproxyConfig | None = None
 _client: PmproxyClient | None = None
+_session_db: SessionDB | None = None
 
 
 def get_client() -> PmproxyClient:
@@ -29,6 +33,13 @@ def get_client() -> PmproxyClient:
     if _client is None:
         raise RuntimeError("pmmcp client not initialized — server has not started")
     return _client
+
+
+def get_session_db() -> SessionDB:
+    """Return the session SQLite DB. Raises if not initialized."""
+    if _session_db is None:
+        raise RuntimeError("session DB not initialized — server has not started")
+    return _session_db
 
 
 async def _health_monitor(client: PmproxyClient, config) -> None:
@@ -44,12 +55,37 @@ async def _health_monitor(client: PmproxyClient, config) -> None:
         await asyncio.sleep(config.health_interval)
 
 
+async def _purge_stale_sessions(session_dir: Path, ttl_hours: int) -> None:
+    """Delete .db files in session_dir older than ttl_hours."""
+    cutoff = time.time() - (ttl_hours * 3600)
+    for db_file in session_dir.glob("*.db"):
+        try:
+            if db_file.stat().st_mtime < cutoff:
+                db_file.unlink()
+                logger.info("purged stale session: %s", db_file.name)
+        except OSError:
+            pass
+
+
 @asynccontextmanager
 async def _lifespan(app: FastMCP) -> AsyncIterator[None]:
-    global _client
+    global _client, _session_db
     assert _config is not None, "Config not set — call server._config = ... before mcp.run()"
+
     _client = PmproxyClient(_config)
-    logger.info("pmmcp starting, pmproxy URL: %s", _config.url)
+
+    # Session DB: ensure directory exists, purge stale files, create new DB
+    session_dir = _config.session_dir.expanduser()
+    session_dir.mkdir(parents=True, exist_ok=True)
+    asyncio.create_task(_purge_stale_sessions(session_dir, _config.session_ttl_hours))
+    _session_db = SessionDB(session_dir / f"{uuid4()}.db")
+    await _session_db.open()
+
+    logger.info(
+        "pmmcp starting, pmproxy URL: %s, session DB: %s",
+        _config.url,
+        _session_db.path,
+    )
     monitor_task = asyncio.create_task(_health_monitor(_client, _config))
     try:
         yield
@@ -61,6 +97,8 @@ async def _lifespan(app: FastMCP) -> AsyncIterator[None]:
             pass
         await _client.close()
         _client = None
+        await _session_db.close(delete=True)
+        _session_db = None
         logger.info("pmmcp shutting down")
 
 

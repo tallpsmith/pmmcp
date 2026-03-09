@@ -65,7 +65,7 @@ You are performing a fleet-wide health check.
 ## Guard Clauses — Check Before Proceeding
 
 1. **Missing tool abort**: If any required tool (pcp_get_hosts, pcp_discover_metrics, \
-pcp_fetch_timeseries, pcp_query_series) is missing or unavailable, stop immediately and \
+pcp_fetch_timeseries, pcp_query_sqlite) is missing or unavailable, stop immediately and \
 report which tool is absent. Do not attempt the health check without it.
 
 2. **No hosts found — stop**: After calling `pcp_get_hosts`, if no hosts are registered \

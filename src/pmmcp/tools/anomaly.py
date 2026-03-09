@@ -7,7 +7,8 @@ import logging
 from pmmcp.client import PmproxyClient, PmproxyConnectionError, PmproxyError, PmproxyTimeoutError
 from pmmcp.server import get_client, mcp
 from pmmcp.tools._errors import _mcp_error
-from pmmcp.tools._fetch import _fetch_window
+from pmmcp.tools._expr import build_series_exprs
+from pmmcp.tools._fetch import _fetch_window, _resolve_series_ids
 from pmmcp.tools._stats import _compute_stats
 from pmmcp.utils import resolve_interval
 
@@ -41,17 +42,28 @@ async def _detect_anomalies_impl(
     """Core implementation, injectable for testing."""
     resolved = resolve_interval(baseline_start, baseline_end, interval)
 
-    if host:
-        expr_parts = [f'{name}{{hostname=="{host}"}}' for name in metrics]
-    else:
-        expr_parts = list(metrics)
-    expr = " or ".join(expr_parts) if len(expr_parts) > 1 else expr_parts[0]
+    exprs = build_series_exprs(metrics, host=host)
 
     try:
+        series_ids = await _resolve_series_ids(client, exprs)
         baseline_vals, _ = await _fetch_window(
-            client, expr, baseline_start, baseline_end, resolved, 1000
+            client,
+            exprs=[],
+            start=baseline_start,
+            end=baseline_end,
+            interval=resolved,
+            limit=1000,
+            series_ids=series_ids,
         )
-        recent_vals, _ = await _fetch_window(client, expr, recent_start, recent_end, resolved, 200)
+        recent_vals, _ = await _fetch_window(
+            client,
+            exprs=[],
+            start=recent_start,
+            end=recent_end,
+            interval=resolved,
+            limit=200,
+            series_ids=series_ids,
+        )
     except PmproxyConnectionError as exc:
         return _mcp_error("Connection error", str(exc), "Check pmproxy connectivity.")
     except PmproxyTimeoutError as exc:
@@ -114,10 +126,10 @@ async def pcp_detect_anomalies(
 ) -> dict | list:
     """Detect anomalies by comparing recent metric behavior to a historical baseline.
 
-    Start here. Recommended first tool at the start of any investigation.
-    Fetches each metric over two windows — a short recent window and a longer
-    historical baseline — then computes a z-score to quantify how far the recent
-    behavior deviates from the baseline distribution.
+    For targeted anomaly analysis on known metrics. For discovery, start with
+    pcp_quick_investigate. Fetches each metric over two windows — a short recent
+    window and a longer historical baseline — then computes a z-score to quantify
+    how far the recent behavior deviates from the baseline distribution.
 
     Args:
         metrics: List of metric names to analyse

@@ -66,7 +66,7 @@ You are conducting a **{subsystem}** performance investigation\
 ## Guard Clauses — Check Before Proceeding
 
 1. **Missing tool abort**: If any required tool (pcp_get_hosts, pcp_discover_metrics, \
-pcp_fetch_timeseries, pcp_query_series) is missing or unavailable, stop immediately and \
+pcp_fetch_timeseries, pcp_query_sqlite) is missing or unavailable, stop immediately and \
 report which tool is absent. Do not attempt the investigation without it.
 
 2. **No metrics found — stop**: After discovery, if no metrics are found in the target \
@@ -125,7 +125,23 @@ Prefer 1–3 significant figures.
 - **Instant/Gauge** (semantics=instant): Use directly — no conversion needed.
 - Always check `pcp_get_metric_info` if unsure about semantics for an unfamiliar metric.
 
-## Step 6 — Findings Structure
+## Step 6 — Tool-Ordering Workflow
+
+Follow this investigation sequence for best results:
+
+1. **Start broad** with `pcp_quick_investigate` — pass the time of interest and optionally a \
+subsystem prefix. This discovers all available metrics and returns the top anomalies ranked \
+by z-score. Use this as your first move for open-ended investigation.
+2. **Confirm findings** with `pcp_detect_anomalies` or `pcp_compare_windows` — take the \
+anomalous metrics identified in step 1 and run targeted analysis with precise time windows \
+to verify and quantify the anomaly.
+3. **Retrieve detailed data** with `pcp_fetch_timeseries` — only for metrics confirmed as \
+anomalous in step 2. Drill down to fine-grained time-series data for root cause analysis.
+
+Do NOT jump straight to `pcp_fetch_timeseries` for exploration — it requires you to already \
+know which metrics to look at.
+
+## Step 7 — Findings Structure
 
 Report findings as:
 1. **Anomalies** (ranked by severity) — metric name, affected period, observed value vs baseline

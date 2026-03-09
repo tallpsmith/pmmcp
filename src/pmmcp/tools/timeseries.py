@@ -1,134 +1,27 @@
-"""pcp_fetch_timeseries and pcp_query_series — historical time-series data."""
+"""pcp_fetch_timeseries — historical time-series data, stored in session SQLite DB."""
 
 from __future__ import annotations
 
 import logging
+import re
 
 from pmmcp.client import PmproxyClient, PmproxyConnectionError, PmproxyError, PmproxyTimeoutError
-from pmmcp.server import get_client, mcp
+from pmmcp.server import get_client, get_session_db, mcp
+from pmmcp.session_db import SessionDB
 from pmmcp.tools._errors import _mcp_error
-from pmmcp.utils import expand_time_units as _expand_time_units
+from pmmcp.tools._fetch import _fetch_window
 from pmmcp.utils import natural_samples as compute_natural_samples
 from pmmcp.utils import resolve_interval
 
 logger = logging.getLogger(__name__)
 
-
-async def _resolve_series_and_fetch(
-    client: PmproxyClient,
-    expr: str,
-    start: str,
-    end: str,
-    interval: str,
-    limit: int,
-    offset: int,
-) -> dict:
-    """Query series IDs by expression, then fetch values. Returns raw grouped data."""
-    resolved = resolve_interval(start, end, interval)
-    try:
-        effective_samples = min(limit, compute_natural_samples(start, end, resolved))
-    except ValueError:
-        effective_samples = limit
-
-    try:
-        series_ids = await client.series_query(expr)
-    except PmproxyConnectionError as exc:
-        return _mcp_error(
-            "Connection error",
-            f"pmproxy is unreachable: {exc}",
-            "Check that pmproxy is running and the URL is correct.",
-        )
-    except PmproxyTimeoutError as exc:
-        return _mcp_error(
-            "Timeout",
-            f"pmproxy did not respond in time: {exc}",
-            "Try reducing the time window or number of metrics.",
-        )
-    except PmproxyError as exc:
-        return _mcp_error("pmproxy error", str(exc), "Check the metric name or expression.")
-
-    if not series_ids:
-        return {"items": [], "total": 0, "limit": limit, "offset": offset, "has_more": False}
-
-    # Ensure series_ids are strings (not value-with-timestamp objects)
-    if isinstance(series_ids[0], dict):
-        series_ids = list({entry["series"] for entry in series_ids})
-
-    try:
-        values = await client.series_values(
-            series=series_ids,
-            start=_expand_time_units(start),
-            finish=_expand_time_units(end),
-            interval=resolved,
-            samples=effective_samples,
-        )
-    except PmproxyTimeoutError as exc:
-        return _mcp_error(
-            "Timeout",
-            f"pmproxy did not respond in time: {exc}",
-            "Try reducing the time window, interval, or limit.",
-        )
-    except PmproxyError as exc:
-        return _mcp_error("pmproxy error", str(exc), "Check pmproxy logs for details.")
-
-    # Get metric names for series IDs
-    name_by_series: dict[str, str] = {}
-    try:
-        labels_list = await client.series_labels(series_ids)
-        for item in labels_list:
-            metric_name = item.get("labels", {}).get("metric.name", "")
-            if metric_name:
-                name_by_series[item["series"]] = metric_name
-    except PmproxyError:
-        pass
-
-    # Get instance names if needed
-    instance_name_by_series: dict[str, str] = {}
-    try:
-        instances_list = await client.series_instances(series_ids)
-        for item in instances_list:
-            instance_name_by_series[item["series"]] = item.get("name", "")
-    except PmproxyError:
-        pass
-
-    # Group data points by (metric_name, instance)
-    grouped: dict[tuple[str, str | None], list[dict]] = {}
-    for point in values:
-        series_id = point["series"]
-        metric_name = name_by_series.get(series_id, series_id)
-        instance_name = instance_name_by_series.get(series_id) or None
-        key = (metric_name, instance_name)
-        if key not in grouped:
-            grouped[key] = []
-        grouped[key].append(
-            {
-                "timestamp": point["timestamp"],
-                "value": point["value"],
-            }
-        )
-
-    all_items = [
-        {
-            "name": name,
-            "instance": inst,
-            "samples": samples,
-        }
-        for (name, inst), samples in grouped.items()
-    ]
-
-    total = len(all_items)
-    page = all_items[offset : offset + limit] if limit < total else all_items
-    return {
-        "items": page,
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-        "has_more": offset + limit < total,
-    }
+# PCP series IDs are 40-char lowercase hex (SHA-1)
+_SERIES_HASH_RE = re.compile(r"^[0-9a-f]{40}$")
 
 
 async def _fetch_timeseries_impl(
     client: PmproxyClient,
+    session_db: SessionDB,
     names: list[str],
     start: str,
     end: str,
@@ -137,68 +30,97 @@ async def _fetch_timeseries_impl(
     instances: list[str],
     limit: int,
     offset: int,
-    zone: str,
+    expr: str,
 ) -> dict:
-    """Core implementation for pcp_fetch_timeseries."""
-    # Query each metric individually (pmproxy /series/query doesn't support
-    # multi-metric 'or' expressions reliably) and union the series IDs.
-    all_items: list[dict] = []
+    """Fetch timeseries data and write to session SQLite DB.
+
+    Returns compact metadata — use pcp_query_sqlite to analyse the data.
+    """
+    resolved = resolve_interval(start, end, interval)
+    try:
+        effective_samples = min(limit, compute_natural_samples(start, end, resolved))
+    except ValueError:
+        effective_samples = limit
+
+    # Build expression list: either from explicit expr or from metric names
+    if expr:
+        exprs = [expr]
+    else:
+        exprs = [f'{name}{{hostname=="{host}"}}' if host else name for name in names]
+
+    all_rows: list[dict] = []
+    metrics_seen: set[str] = set()
     last_error: dict | None = None
 
-    for name in names:
-        expr = f'{name}{{hostname=="{host}"}}' if host else name
-        result = await _resolve_series_and_fetch(
-            client,
-            expr=expr,
-            start=start,
-            end=end,
-            interval=interval,
-            limit=limit,
-            offset=0,
-        )
-        if result.get("isError"):
-            last_error = result
+    for expression in exprs:
+        try:
+            _, raw_samples = await _fetch_window(
+                client,
+                exprs=[expression],
+                start=start,
+                end=end,
+                interval=resolved,
+                limit=effective_samples,
+            )
+        except PmproxyConnectionError as exc:
+            last_error = _mcp_error(
+                "Connection error",
+                f"pmproxy is unreachable: {exc}",
+                "Check that pmproxy is running and the URL is correct.",
+            )
             continue
-        all_items.extend(result.get("items", []))
+        except PmproxyTimeoutError as exc:
+            last_error = _mcp_error(
+                "Timeout",
+                f"pmproxy did not respond in time: {exc}",
+                "Try reducing the time window or number of metrics.",
+            )
+            continue
+        except PmproxyError as exc:
+            last_error = _mcp_error(
+                "pmproxy error",
+                str(exc),
+                "Check the metric name or expression.",
+            )
+            continue
 
-    if not all_items and last_error:
+        # Strip label filters from expression to get the base metric name
+        base_metric = expression.split("{")[0] if "{" in expression else expression
+
+        for (metric_name, instance), samples in raw_samples.items():
+            # When labels don't resolve, _fetch_window falls back to
+            # the series hash ID. Substitute the known metric name.
+            if _SERIES_HASH_RE.match(metric_name):
+                metric_name = base_metric
+            metrics_seen.add(metric_name)
+            for sample in samples:
+                all_rows.append(
+                    {
+                        "metric": metric_name,
+                        "instance": instance,
+                        "host": host or None,
+                        "timestamp": sample["timestamp"],
+                        "value": sample["value"],
+                    }
+                )
+
+    if not all_rows and last_error:
         return last_error
 
-    total = len(all_items)
-    page = all_items[offset : offset + limit]
+    if all_rows:
+        await session_db.insert_timeseries(all_rows)
+
     return {
-        "items": page,
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-        "has_more": offset + limit < total,
+        "row_count": len(all_rows),
+        "metrics": sorted(metrics_seen),
+        "window": {"start": start, "end": end, "interval": resolved},
+        "hint": "Use pcp_query_sqlite to analyse this data",
     }
-
-
-async def _query_series_impl(
-    client: PmproxyClient,
-    expr: str,
-    start: str,
-    end: str,
-    interval: str,
-    limit: int,
-    offset: int,
-) -> dict:
-    """Core implementation for pcp_query_series."""
-    return await _resolve_series_and_fetch(
-        client,
-        expr=expr,
-        start=start,
-        end=end,
-        interval=interval,
-        limit=limit,
-        offset=offset,
-    )
 
 
 @mcp.tool()
 async def pcp_fetch_timeseries(
-    names: list[str],
+    names: list[str] = [],  # noqa: B006
     start: str = "-1hour",
     end: str = "now",
     interval: str = "auto",
@@ -206,32 +128,36 @@ async def pcp_fetch_timeseries(
     instances: list[str] = [],  # noqa: B006
     limit: int = 500,
     offset: int = 0,
-    zone: str = "UTC",
+    expr: str = "",
 ) -> dict:
-    """Fetch historical time-series values for one or more metrics over a time window.
+    """Fetch historical time-series data into the session database for SQL analysis.
 
-    Use for targeted drill-down after anomalies are identified — fetch only the
-    specific metrics confirmed as anomalous by pcp_detect_anomalies or pcp_scan_changes.
-    Supports the hierarchical sampling strategy: start with wide windows and coarse
-    intervals, then drill down to interesting periods at finer granularity.
-    The 'auto' interval selects granularity based on window size.
+    Data is stored in the session SQLite DB — use pcp_query_sqlite to analyse it.
+    Multiple calls accumulate data: fetch different metrics or time windows, then
+    JOIN/compare them with SQL.
+
+    NOT for exploratory investigation — use pcp_quick_investigate for discovery.
+    Use for targeted drill-down after anomalies are identified.
+
+    The session DB schema: timeseries(metric TEXT, instance TEXT, host TEXT,
+    timestamp REAL, value REAL).
 
     Auto-interval mapping: <=1h->15s, <=24h->5min, <=7d->1hour, >7d->6hour
 
     Args:
-        names: List of metric names
+        names: List of metric names (ignored if expr is provided)
         start: Start time (ISO-8601 or PCP relative e.g. '-6hours', '-7days')
         end: End time (ISO-8601 or 'now')
         interval: Sampling interval (e.g., '15s', '5min', '1hour') or 'auto'
         host: Target hostname or glob (empty queries all hosts)
         instances: Filter to specific instances (empty means all)
-        limit: Maximum data points per metric/instance (default 500).
-            For exploration use 50; increase for full dataset analysis.
+        limit: Maximum data points per metric/instance (default 500)
         offset: Pagination offset
-        zone: Timezone for timestamps
+        expr: Raw PCP series expression (overrides names if provided)
     """
     return await _fetch_timeseries_impl(
         get_client(),
+        get_session_db(),
         names=names,
         start=start,
         end=end,
@@ -240,39 +166,5 @@ async def pcp_fetch_timeseries(
         instances=instances,
         limit=limit,
         offset=offset,
-        zone=zone,
-    )
-
-
-@mcp.tool()
-async def pcp_query_series(
-    expr: str,
-    start: str = "-1hour",
-    end: str = "now",
-    interval: str = "auto",
-    limit: int = 500,
-    offset: int = 0,
-) -> dict:
-    """Execute a raw PCP series query expression for advanced filtering.
-
-    The query language supports label matching, arithmetic, and aggregation.
-    Use when precise control is needed (e.g., 'kernel.percpu.cpu.user{hostname=="web-01"}').
-
-    Args:
-        expr: PCP series query expression
-        start: Start time
-        end: End time
-        interval: Sampling interval or 'auto'
-        limit: Max data points per series.
-            For exploration use 50; increase for full dataset analysis.
-        offset: Pagination offset
-    """
-    return await _query_series_impl(
-        get_client(),
         expr=expr,
-        start=start,
-        end=end,
-        interval=interval,
-        limit=limit,
-        offset=offset,
     )
