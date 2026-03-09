@@ -10,5 +10,6 @@ from pmmcp.tools import (  # noqa: F401
     ranking,  # noqa: F401
     scanning,  # noqa: F401
     search,
+    sqlite_sink,  # noqa: F401
     timeseries,
 )

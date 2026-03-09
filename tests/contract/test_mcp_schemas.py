@@ -14,6 +14,7 @@ EXPECTED_TOOLS = {
     "pcp_search",
     "pcp_derive_metric",
     "pcp_quick_investigate",
+    "pcp_query_sqlite",
 }
 
 
@@ -122,3 +123,11 @@ def test_fetch_timeseries_description_steering():
     """T014: pcp_fetch_timeseries warns against exploratory use."""
     desc = _get_tool_description("pcp_fetch_timeseries")
     assert "NOT for exploratory investigation" in desc, f"Missing steering in: {desc}"
+
+
+def test_pcp_query_sqlite_schema():
+    """pcp_query_sqlite schema requires 'sql' parameter."""
+    tools = {t.name: t for t in srv.mcp._tool_manager.list_tools()}
+    tool = tools["pcp_query_sqlite"]
+    schema = tool.parameters
+    assert "sql" in schema.get("required", []) or "sql" in schema.get("properties", {})
