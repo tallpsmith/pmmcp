@@ -13,10 +13,9 @@ import pytest
 def test_http_transport_healthcheck():
     """pmmcp --transport streamable-http starts and /healthcheck responds.
 
-    Uses a bogus pmproxy URL so the healthcheck returns 503 — either
-    "starting" (no MCP session yet) or "error" (pmproxy unreachable).
-    We're testing that the HTTP server boots and responds, not that
-    pmproxy is actually there.
+    No MCP session connects, so the healthcheck returns 200 "starting"
+    (HTTP transport is up and ready).  We're testing that the HTTP server
+    boots and responds, not that pmproxy is actually there.
     """
     proc = subprocess.Popen(
         [
@@ -40,9 +39,9 @@ def test_http_transport_healthcheck():
         assert proc.poll() is None, f"Process exited early: {proc.stderr.read().decode()}"
 
         resp = httpx.get("http://127.0.0.1:18080/healthcheck", timeout=5)
-        assert resp.status_code == 503
+        assert resp.status_code == 200
         body = resp.json()
-        assert body["status"] in ("starting", "error")
+        assert body["status"] == "starting"
         assert "pmmcp_version" in body
     finally:
         proc.terminate()

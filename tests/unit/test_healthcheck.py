@@ -75,7 +75,12 @@ async def test_healthcheck_error_message_propagated():
 
 
 async def test_healthcheck_returns_starting_when_client_is_none():
-    """Before any MCP session connects (HTTP mode), healthcheck returns 503 starting."""
+    """Before any MCP session connects (HTTP mode), healthcheck returns 200 starting.
+
+    The HTTP transport is healthy and ready to accept connections — "no session
+    yet" is not unhealthy, it's idle.  Returning 200 lets compose healthchecks
+    pass during the window between container start and first MCP client.
+    """
     import pmmcp.server as srv
 
     # Temporarily set _client to None (simulates pre-session state)
@@ -85,7 +90,7 @@ async def test_healthcheck_returns_starting_when_client_is_none():
         from starlette.requests import Request
 
         response = await srv.healthcheck(Request(scope={"type": "http"}))
-        assert response.status_code == 503
+        assert response.status_code == 200
         data = json.loads(response.body)
         assert data["status"] == "starting"
         assert data["pmmcp_version"] == __version__

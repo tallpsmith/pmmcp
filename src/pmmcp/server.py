@@ -141,15 +141,15 @@ async def _healthcheck_impl(client: PmproxyClient) -> Response:
 async def healthcheck(request: Request) -> Response:
     if _client is None:
         # Server is up but no MCP session has connected yet (HTTP mode)
-        # or lifespan hasn't run (stdio pre-connect). Still report status.
+        # or lifespan hasn't run (stdio pre-connect).  Return 200 — the
+        # HTTP transport is healthy and ready to accept connections.
         return JSONResponse(
             {
                 "status": "starting",
                 "connection_ok": False,
-                "error": "No MCP session active — client not yet initialized",
                 "pmmcp_version": __version__,
             },
-            status_code=503,
+            status_code=200,
         )
     return await _healthcheck_impl(_client)
 

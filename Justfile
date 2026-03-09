@@ -32,12 +32,8 @@ test:
 ci: check test
 
 # Start services and run E2E tests (requires podman)
+# Uses --wait to match CI behaviour — all containers must be healthy before tests run
 e2e:
-    PROFILES_DIR=./profiles/e2e podman compose up -d
-    @echo "Waiting for pmproxy at http://localhost:44322..."
-    @for i in $(seq 1 30); do \
-        curl -sf http://localhost:44322/pmapi/context?hostspec=localhost && break; \
-        sleep 2; \
-    done
+    PROFILES_DIR=./profiles/e2e podman compose up -d --wait --wait-timeout 120
     PMPROXY_URL=http://localhost:44322 uv run python -m pytest -m e2e -q
     @echo "Stack still running — run 'podman compose down --volumes' to purge seeded data before next run"
