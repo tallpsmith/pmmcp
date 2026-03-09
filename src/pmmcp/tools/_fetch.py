@@ -81,6 +81,23 @@ async def _fetch_metadata(
     return name_by_series, instance_name_by_series
 
 
+async def _fetch_descs(
+    client: PmproxyClient, series_ids: list[str]
+) -> dict[str, str]:
+    """Fetch metric semantics from /series/descs, returning {series_id: semantics_str}.
+
+    Swallows PmproxyError on failure — callers fall back to treating metrics
+    as instant (the safe default).
+    """
+    if not series_ids:
+        return {}
+    try:
+        raw = await client.series_descs(series_ids)
+        return {entry["series"]: entry.get("semantics", "instant") for entry in raw}
+    except PmproxyError:
+        return {}
+
+
 async def _fetch_window(
     client: PmproxyClient,
     exprs: list[str],
