@@ -67,3 +67,18 @@ services:
     depends_on:
       pmlogsynth-seeder:
         condition: service_completed_successfully
+
+  pmmcp:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      PMPROXY_URL: http://pcp:44322
+    depends_on:
+      pcp:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthcheck')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
