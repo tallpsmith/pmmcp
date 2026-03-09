@@ -86,9 +86,7 @@ async def _fetch_timeseries_impl(
             expression,
         )
         for (metric_name, instance), samples in raw_samples.items():
-            logger.info(
-                "  key=(%r, %r) -> %d samples", metric_name, instance, len(samples)
-            )
+            logger.info("  key=(%r, %r) -> %d samples", metric_name, instance, len(samples))
             metrics_seen.add(metric_name)
             for sample in samples:
                 all_rows.append(
