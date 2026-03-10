@@ -51,7 +51,7 @@ mcp-grafana service health after compose stack startup.
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Add `grafana` service to docker-compose.yml with image `grafana/grafana:latest`, port 3000, GF_INSTALL_PLUGINS (ZIP URL per research.md R3), GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS, anonymous auth env vars (per research.md R5), healthcheck (`curl -sf http://localhost:3000/api/health`), volume mount `./grafana/provisioning:/etc/grafana/provisioning:ro`, depends_on `pcp` service_started
+- [x] T006 [US1] Add `grafana` service to docker-compose.yml with image `grafana/grafana:latest`, port 3000, GF_INSTALL_PLUGINS (ZIP URL per research.md R3), GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS, anonymous auth env vars (per research.md R5), healthcheck (`curl -sf http://localhost:3000/api/health`), volume mount `./grafana/provisioning:/etc/grafana/provisioning:ro`, depends_on `pcp` service_started
 - [ ] T007 [US1] Verify: run `podman compose up -d --wait`, confirm Grafana container is healthy, run E2E tests from T003-T005
 
 **Checkpoint**: Grafana is accessible with working PCP datasources — MVP complete
@@ -72,7 +72,7 @@ mcp-grafana service health after compose stack startup.
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] Add `mcp-grafana` service to docker-compose.yml with image `mcp/grafana`, port 8000, GRAFANA_URL=http://grafana:3000, GRAFANA_USERNAME=admin, GRAFANA_PASSWORD=admin, depends_on `grafana` service_healthy
+- [x] T009 [US2] Add `mcp-grafana` service to docker-compose.yml with image `mcp/grafana`, port 8000, GRAFANA_URL=http://grafana:3000, GRAFANA_USERNAME=admin, GRAFANA_PASSWORD=admin, depends_on `grafana` service_healthy
 - [ ] T010 [US2] Verify: run `podman compose up -d --wait`, confirm mcp-grafana container is running, run E2E test from T008
 
 **Checkpoint**: Both Grafana and mcp-grafana are running and wired together
