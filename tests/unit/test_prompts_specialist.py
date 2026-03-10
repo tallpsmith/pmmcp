@@ -339,3 +339,35 @@ def test_process_domain_knowledge_baseline_heuristic():
         phrase in dk for phrase in ("baseline", "7-day", "past week", "7-day pattern")
     )
     assert has_baseline, "Process domain_knowledge missing baseline-aware heuristic"
+
+
+# ---------------------------------------------------------------------------
+# T020-T021: Graceful degradation when baseline data is insufficient
+# ---------------------------------------------------------------------------
+
+
+def test_graceful_degradation_fallback_instruction():
+    """T020: Domain specialists include instructions to fall back to
+    threshold-only analysis if pcp_detect_anomalies returns insufficient data."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    for sub in _DOMAIN_SUBSYSTEMS:
+        text = _specialist_investigate_impl(sub)[0]["content"].lower()
+        assert "threshold-only" in text or "threshold only" in text, (
+            f"{sub}: missing threshold-only fallback instruction"
+        )
+        assert "insufficient" in text or "fall back" in text or "fallback" in text, (
+            f"{sub}: missing fallback trigger language"
+        )
+
+
+def test_graceful_degradation_report_limitation():
+    """T021: Domain specialists include instructions to note 'insufficient baseline'
+    or similar limitation wording in the report when degraded."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    for sub in _DOMAIN_SUBSYSTEMS:
+        text = _specialist_investigate_impl(sub)[0]["content"].lower()
+        assert "insufficient baseline" in text, (
+            f"{sub}: missing 'insufficient baseline' limitation note"
+        )
