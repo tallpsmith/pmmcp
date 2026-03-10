@@ -183,3 +183,95 @@ def test_specialist_impl_interpolates_lookback():
 
     text = _specialist_investigate_impl("cpu", lookback="4hours")[0]["content"]
     assert "4hours" in text
+
+
+# ---------------------------------------------------------------------------
+# T002: Baseline step presence in domain subsystems
+# ---------------------------------------------------------------------------
+
+_DOMAIN_SUBSYSTEMS = ("cpu", "memory", "disk", "network", "process")
+
+
+def test_baseline_step_present_in_domain_subsystems():
+    """T002: Domain specialists include a Baseline step referencing
+    pcp_fetch_timeseries, pcp_detect_anomalies, and 7-day window."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    for sub in _DOMAIN_SUBSYSTEMS:
+        text = _specialist_investigate_impl(sub)[0]["content"]
+        assert "baseline" in text.lower(), f"{sub}: missing Baseline step"
+        assert "pcp_fetch_timeseries" in text, f"{sub}: Baseline must reference pcp_fetch_timeseries"
+        assert "pcp_detect_anomalies" in text, f"{sub}: Baseline must reference pcp_detect_anomalies"
+        assert "7-day" in text.lower() or "7 day" in text.lower(), (
+            f"{sub}: Baseline must reference 7-day window"
+        )
+
+
+# ---------------------------------------------------------------------------
+# T003: Cross-cutting does NOT include Baseline step
+# ---------------------------------------------------------------------------
+
+
+def test_baseline_step_absent_from_crosscutting():
+    """T003: Cross-cutting specialist does NOT have a Baseline workflow step."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    text = _specialist_investigate_impl("crosscutting")[0]["content"]
+    # Cross-cutting should not have a numbered "Baseline" step in its workflow
+    # (it may reference the word "baseline" in domain knowledge for classification,
+    # but should NOT have a "## Baseline" or "**Baseline**" workflow step)
+    workflow_section = text.split("## Workflow")[1] if "## Workflow" in text else ""
+    assert "baseline" not in workflow_section.lower(), (
+        "Cross-cutting must NOT have a Baseline workflow step"
+    )
+
+
+# ---------------------------------------------------------------------------
+# T004: Classification fields in report structure
+# ---------------------------------------------------------------------------
+
+
+def test_classification_fields_in_domain_report_guidance():
+    """T004: Domain specialist output includes classification, ANOMALY,
+    RECURRING, BASELINE, baseline_context, severity_despite_baseline."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    required_terms = [
+        "classification",
+        "ANOMALY",
+        "RECURRING",
+        "BASELINE",
+        "baseline_context",
+        "severity_despite_baseline",
+    ]
+    for sub in _DOMAIN_SUBSYSTEMS:
+        text = _specialist_investigate_impl(sub)[0]["content"]
+        for term in required_terms:
+            assert term in text, f"{sub}: missing '{term}' in report guidance"
+
+
+# ---------------------------------------------------------------------------
+# T005: Narrative guidance for chronic problems
+# ---------------------------------------------------------------------------
+
+
+def test_chronic_problem_narrative_guidance():
+    """T005: Domain specialists include narrative guidance for BASELINE-classified
+    findings — explaining chronic problems in human terms."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    for sub in _DOMAIN_SUBSYSTEMS:
+        text = _specialist_investigate_impl(sub)[0]["content"].lower()
+        has_chronic_language = any(
+            phrase in text
+            for phrase in (
+                "not a new problem",
+                "your normal",
+                "chronic",
+                "historically typical",
+                "been this way",
+            )
+        )
+        assert has_chronic_language, (
+            f"{sub}: missing narrative guidance for chronic/baseline findings"
+        )
