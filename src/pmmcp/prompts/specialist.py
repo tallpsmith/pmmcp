@@ -267,6 +267,10 @@ def specialist_investigate(
 ) -> list[dict]:
     """Deep domain-expert investigation for a specific subsystem.
 
+    Typically dispatched by ``coordinate_investigation`` as part of a parallel
+    6-specialist sweep. For broad 'something is wrong' investigations, start
+    with the coordinator prompt instead of calling this directly.
+
     Each subsystem (cpu, memory, disk, network, process, crosscutting)
     carries concrete investigation heuristics, metric relationships, and
     interpretation guidance from an experienced performance engineer.

@@ -415,3 +415,13 @@ def test_graceful_degradation_report_limitation():
         assert "insufficient baseline" in text, (
             f"{sub}: missing 'insufficient baseline' limitation note"
         )
+
+
+def test_specialist_docstring_references_coordinator():
+    """specialist_investigate docstring references coordinate_investigation as parent."""
+    from pmmcp.prompts.specialist import specialist_investigate
+
+    docstring = specialist_investigate.__doc__
+    assert "coordinate_investigation" in docstring, (
+        "specialist_investigate docstring must reference coordinate_investigation"
+    )
