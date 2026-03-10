@@ -177,12 +177,8 @@ def test_coordinator_phase3_visualisation():
     from pmmcp.prompts.coordinator import _coordinate_investigation_impl
 
     text = _coordinate_investigation_impl(request="app is slow")[0]["content"]
-    assert "Phase 3" in text or "phase 3" in text.lower(), (
-        "Coordinator missing Phase 3"
-    )
-    assert "dashboard" in text.lower(), (
-        "Coordinator Phase 3 must reference dashboard creation"
-    )
+    assert "Phase 3" in text or "phase 3" in text.lower(), "Coordinator missing Phase 3"
+    assert "dashboard" in text.lower(), "Coordinator Phase 3 must reference dashboard creation"
 
 
 def test_coordinator_grafana_conventions():
