@@ -21,7 +21,8 @@ _SPECIALIST_KNOWLEDGE: dict[str, dict] = {
 5. Runqueue depth (`kernel.all.runnable`) sustained > ncpu signals CPU starvation; correlate with load average.
 6. Per-CPU imbalance: if one CPU is pegged at 100% while others idle, suspect single-threaded bottleneck or IRQ affinity.
 7. High iowait (`kernel.all.cpu.wait.total`) with low user/sys → the CPU is waiting on I/O, investigate disk/network.
-8. Sudden CPU spike with no workload change → check for runaway process, cron job, or garbage collection storm.""",
+8. Sudden CPU spike with no workload change → check for runaway process, cron job, or garbage collection storm.
+9. Before flagging saturation, check the 7-day baseline — is this CPU level typical for this time of day over the past week? A host that always runs hot at 2pm (batch processing) is different from a sudden spike.""",
         "report_guidance": """\
 For each finding report: metric name, observed value (as %), baseline comparison, \
 affected time window, and severity (critical/warning/info). Express CPU values as \
@@ -38,7 +39,8 @@ percentages normalised by hinv.ncpu.""",
 5. Slab growth (`mem.vmstat.nr_slab_reclaimable`, `nr_slab_unreclaimable`) — unreclaimable slab bloat is a kernel memory leak.
 6. Huge page usage (`mem.util.hugepagesTotalBytes` vs `mem.util.hugepagesFreeBytes`) — misconfig wastes reserved memory.
 7. Buffer/cache ratio: high `mem.util.bufmem` + `mem.util.cached` with low `mem.util.free` is normal — Linux aggressively caches.
-8. Memory pressure trend: plot `mem.util.available` over time — a steady decline indicates a leak even if current usage looks OK.""",
+8. Memory pressure trend: plot `mem.util.available` over time — a steady decline indicates a leak even if current usage looks OK.
+9. Compare memory growth against the 7-day baseline to distinguish genuine leaks from normal working-set growth — if `mem.util.available` has been declining at the same rate all week, it is the baseline, not a new leak.""",
         "report_guidance": """\
 For each finding report: metric name, observed value in human units (MB/GB), \
 percentage of total memory, trend direction (stable/rising/falling), and severity. \
@@ -55,7 +57,8 @@ Always distinguish between 'used' and 'available' — they tell different storie
 5. I/O latency = avactive / (reads + writes) — > 10ms for SSD or > 20ms for HDD is slow.
 6. Read vs write ratio: heavy writes with journaling FS (ext4, xfs) amplify actual I/O — check for write-behind flush storms.
 7. Correlate disk saturation with CPU iowait (`kernel.all.cpu.wait.total`) — if both high, disk is the bottleneck.
-8. Per-device breakdown matters: one saturated device with others idle → workload imbalance or partition misplacement.""",
+8. Per-device breakdown matters: one saturated device with others idle → workload imbalance or partition misplacement.
+9. Check whether I/O spikes recur at the same time daily — scheduled jobs like backups, log rotation, or cron-driven ETL cause predictable bursts that are not anomalies.""",
         "report_guidance": """\
 For each finding report: device name, metric, observed value in human units \
 (IOPS, MB/s, ms latency), device utilisation %, and severity. Always identify \
@@ -72,7 +75,8 @@ which specific device is affected.""",
 5. Connection states: `network.tcp.currestab` for active connections — sudden spike may indicate connection storm or DDoS.
 6. Per-interface breakdown: aggregate numbers hide problems — a saturated eth0 with idle eth1 suggests missing bonding or routing issues.
 7. Dropped packets with no errors → buffer exhaustion (ring buffer too small) or CPU too slow to process incoming packets.
-8. Compare inbound vs outbound — asymmetric traffic patterns help identify whether the host is a client, server, or relay.""",
+8. Compare inbound vs outbound — asymmetric traffic patterns help identify whether the host is a client, server, or relay.
+9. Check whether the current packet drop rate is within normal variance over the past week — a host that always drops 0.01% of packets at peak hours is not the same as a sudden 5% drop rate.""",
         "report_guidance": """\
 For each finding report: interface name, metric, observed rate in human units \
 (KB/s, MB/s, packets/s), percentage of link capacity if known, and severity. \
@@ -89,7 +93,8 @@ Always identify which interface is affected.""",
 5. Per-process CPU/memory via hotproc (if available) — identifies the specific process consuming resources.
 6. Blocked processes (`proc.runq.blocked`) — processes stuck in uninterruptible sleep, usually waiting on I/O.
 7. Thread count trends — growing thread count over time without corresponding workload increase suggests thread pool leak.
-8. New process creation rate (`rate(proc.nprocs)`) — high churn (many short-lived processes) wastes fork/exec overhead.""",
+8. New process creation rate (`rate(proc.nprocs)`) — high churn (many short-lived processes) wastes fork/exec overhead.
+9. Check whether process count and context switch rate match the 7-day pattern before flagging runaway processes — some hosts legitimately run 500+ processes at baseline.""",
         "report_guidance": """\
 For each finding report: process metric, observed value, comparison to healthy \
 baseline (e.g., normal process count), trend direction, and severity. Identify \
