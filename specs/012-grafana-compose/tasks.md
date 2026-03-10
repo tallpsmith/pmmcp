@@ -52,7 +52,7 @@ mcp-grafana service health after compose stack startup.
 ### Implementation for User Story 1
 
 - [x] T006 [US1] Add `grafana` service to docker-compose.yml with image `grafana/grafana:latest`, port 3000, GF_INSTALL_PLUGINS (ZIP URL per research.md R3), GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS, anonymous auth env vars (per research.md R5), healthcheck (`curl -sf http://localhost:3000/api/health`), volume mount `./grafana/provisioning:/etc/grafana/provisioning:ro`, depends_on `pcp` service_started
-- [ ] T007 [US1] Verify: run `podman compose up -d --wait`, confirm Grafana container is healthy, run E2E tests from T003-T005
+- [x] T007 [US1] Verify: run `podman compose up -d --wait`, confirm Grafana container is healthy, run E2E tests from T003-T005
 
 **Checkpoint**: Grafana is accessible with working PCP datasources — MVP complete
 
@@ -73,7 +73,7 @@ mcp-grafana service health after compose stack startup.
 ### Implementation for User Story 2
 
 - [x] T009 [US2] Add `mcp-grafana` service to docker-compose.yml with image `mcp/grafana`, port 8000, GRAFANA_URL=http://grafana:3000, GRAFANA_USERNAME=admin, GRAFANA_PASSWORD=admin, depends_on `grafana` service_healthy
-- [ ] T010 [US2] Verify: run `podman compose up -d --wait`, confirm mcp-grafana container is running, run E2E test from T008
+- [x] T010 [US2] Verify: run `podman compose up -d --wait`, confirm mcp-grafana container is running, run E2E test from T008
 
 **Checkpoint**: Both Grafana and mcp-grafana are running and wired together
 
@@ -93,7 +93,7 @@ mcp-grafana service health after compose stack startup.
 
 - [x] T011 [US3] Add "Wait for Grafana" step to .github/workflows/ci.yml E2E job after the "Wait for pmproxy" step — poll `http://localhost:3000/api/health` until healthy (same pattern as pmproxy wait)
 - [x] T012 [US3] Add `GRAFANA_URL: http://localhost:3000` to the env section of the E2E job in .github/workflows/ci.yml
-- [ ] T013 [US3] Verify: run existing E2E tests locally with compose stack to confirm no regressions (SC-005)
+- [x] T013 [US3] Verify: run existing E2E tests locally with compose stack to confirm no regressions (SC-005)
 
 **Checkpoint**: CI workflow includes Grafana services and passes all tests
 
@@ -106,7 +106,7 @@ mcp-grafana service health after compose stack startup.
 - [x] T014 [P] Update README.md — add Grafana and mcp-grafana to the services table, document ports (3000, 8000), add Grafana-specific quickstart section
 - [x] T015 [P] Update CLAUDE.md — add Grafana compose gotchas (unsigned plugin, basic auth requirement, GF_INSTALL_PLUGINS ZIP URL pattern) to "E2E Container Gotchas" section
 - [x] T016 [P] Add inline comments to docker-compose.yml for the new grafana and mcp-grafana services explaining key env vars and the auth decision
-- [ ] T017 Run quickstart.md validation — execute all steps from specs/012-grafana-compose/quickstart.md against a fresh compose stack and confirm they work
+- [x] T017 Run quickstart.md validation — execute all steps from specs/012-grafana-compose/quickstart.md against a fresh compose stack and confirm they work
 
 ---
 
