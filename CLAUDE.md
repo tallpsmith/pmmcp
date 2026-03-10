@@ -106,6 +106,30 @@ podman compose down
 - Grafana healthcheck uses `curl -sf http://localhost:3000/api/health` — the container must have curl installed (official image does)
 - Datasources are auto-provisioned from `grafana/provisioning/datasources/pcp.yaml` — mounted read-only into the container
 
+## Grafana Dashboard Conventions (Investigation Output)
+
+When creating dashboards as part of an investigation:
+
+| Convention | Value |
+|-----------|-------|
+| Folder | `pmmcp-triage` (configurable via `PMMCP_GRAFANA_FOLDER`) |
+| Naming | `YYYY-MM-DD <short summary>` (e.g., `2026-03-10 memory cascade saas-prod-01`) |
+| Tagging | Always include `pmmcp-generated` |
+| Deeplink | After creation, call `generate_deeplink` and return URL to user |
+| Auto-trigger | Offer visualisation when findings span 3+ metrics or 2+ subsystems |
+
+## Investigation Prompt Hierarchy
+
+The investigation prompt hierarchy is:
+
+```
+session_init → coordinate_investigation → specialist_investigate (×6)
+```
+
+- **ALWAYS** start broad investigations with `coordinate_investigation`
+- **DO NOT** call raw tools (`pcp_fetch_timeseries`, `pcp_detect_anomalies`) directly for open-ended investigations
+- Specialist prompts are dispatched by the coordinator — don't call them directly unless targeting a specific subsystem
+
 ## CI / Local E2E Parity — CRITICAL
 
 **The local compose pipeline and the GitHub Actions E2E workflow MUST test the same topology.** When they diverge, tests pass locally but fail in CI (or vice versa) with no obvious cause.

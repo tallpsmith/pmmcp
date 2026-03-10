@@ -197,6 +197,8 @@ See **Running pmmcp** below for all CLI flags and environment variables.
 | `PMMCP_TRANSPORT` | `stdio` | MCP transport mode |
 | `PMMCP_HOST` | `127.0.0.1` | Bind host for HTTP transport |
 | `PMMCP_PORT` | `8080` | Bind port for HTTP transport |
+| `PMMCP_GRAFANA_FOLDER` | `pmmcp-triage` | Grafana folder for investigation dashboards |
+| `PMMCP_REPORT_DIR` | `~/.pmmcp/reports` | Output directory for HTML fallback reports |
 
 **Precedence:** CLI flag > environment variable > default.
 
