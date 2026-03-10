@@ -275,3 +275,67 @@ def test_chronic_problem_narrative_guidance():
         assert has_chronic_language, (
             f"{sub}: missing narrative guidance for chronic/baseline findings"
         )
+
+
+# ---------------------------------------------------------------------------
+# T010-T013: Baseline-aware heuristics in domain knowledge
+# ---------------------------------------------------------------------------
+
+
+def test_cpu_domain_knowledge_baseline_heuristic():
+    """T010: CPU domain_knowledge includes guidance to check whether current
+    CPU levels are typical for this time of day over the past week."""
+    from pmmcp.prompts.specialist import _SPECIALIST_KNOWLEDGE
+
+    dk = _SPECIALIST_KNOWLEDGE["cpu"]["domain_knowledge"].lower()
+    assert "time of day" in dk or "past week" in dk or "7-day" in dk or "baseline" in dk, (
+        "CPU domain_knowledge missing baseline-aware heuristic"
+    )
+
+
+def test_memory_domain_knowledge_baseline_heuristic():
+    """T011: Memory domain_knowledge includes guidance to compare memory growth
+    against the 7-day baseline to distinguish leaks from normal working-set growth."""
+    from pmmcp.prompts.specialist import _SPECIALIST_KNOWLEDGE
+
+    dk = _SPECIALIST_KNOWLEDGE["memory"]["domain_knowledge"].lower()
+    has_baseline = any(
+        phrase in dk
+        for phrase in ("7-day", "baseline", "working-set growth", "normal growth", "past week")
+    )
+    assert has_baseline, "Memory domain_knowledge missing baseline-aware leak heuristic"
+
+
+def test_disk_domain_knowledge_baseline_heuristic():
+    """T012: Disk domain_knowledge includes guidance to check whether I/O spikes
+    recur at the same time daily (scheduled jobs)."""
+    from pmmcp.prompts.specialist import _SPECIALIST_KNOWLEDGE
+
+    dk = _SPECIALIST_KNOWLEDGE["disk"]["domain_knowledge"].lower()
+    has_schedule = any(
+        phrase in dk
+        for phrase in ("same time daily", "scheduled job", "recur", "backup", "log rotation")
+    )
+    assert has_schedule, "Disk domain_knowledge missing baseline-aware scheduled job heuristic"
+
+
+def test_network_domain_knowledge_baseline_heuristic():
+    """T013a: Network domain_knowledge contains at least one baseline-aware heuristic."""
+    from pmmcp.prompts.specialist import _SPECIALIST_KNOWLEDGE
+
+    dk = _SPECIALIST_KNOWLEDGE["network"]["domain_knowledge"].lower()
+    has_baseline = any(
+        phrase in dk for phrase in ("baseline", "7-day", "past week", "normal variance")
+    )
+    assert has_baseline, "Network domain_knowledge missing baseline-aware heuristic"
+
+
+def test_process_domain_knowledge_baseline_heuristic():
+    """T013b: Process domain_knowledge contains at least one baseline-aware heuristic."""
+    from pmmcp.prompts.specialist import _SPECIALIST_KNOWLEDGE
+
+    dk = _SPECIALIST_KNOWLEDGE["process"]["domain_knowledge"].lower()
+    has_baseline = any(
+        phrase in dk for phrase in ("baseline", "7-day", "past week", "7-day pattern")
+    )
+    assert has_baseline, "Process domain_knowledge missing baseline-aware heuristic"
