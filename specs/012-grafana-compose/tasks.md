@@ -103,9 +103,9 @@ mcp-grafana service health after compose stack startup.
 
 **Purpose**: Documentation updates and final validation
 
-- [ ] T014 [P] Update README.md — add Grafana and mcp-grafana to the services table, document ports (3000, 8000), add Grafana-specific quickstart section
-- [ ] T015 [P] Update CLAUDE.md — add Grafana compose gotchas (unsigned plugin, basic auth requirement, GF_INSTALL_PLUGINS ZIP URL pattern) to "E2E Container Gotchas" section
-- [ ] T016 [P] Add inline comments to docker-compose.yml for the new grafana and mcp-grafana services explaining key env vars and the auth decision
+- [x] T014 [P] Update README.md — add Grafana and mcp-grafana to the services table, document ports (3000, 8000), add Grafana-specific quickstart section
+- [x] T015 [P] Update CLAUDE.md — add Grafana compose gotchas (unsigned plugin, basic auth requirement, GF_INSTALL_PLUGINS ZIP URL pattern) to "E2E Container Gotchas" section
+- [x] T016 [P] Add inline comments to docker-compose.yml for the new grafana and mcp-grafana services explaining key env vars and the auth decision
 - [ ] T017 Run quickstart.md validation — execute all steps from specs/012-grafana-compose/quickstart.md against a fresh compose stack and confirm they work
 
 ---

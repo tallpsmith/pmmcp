@@ -19,12 +19,14 @@ pmproxy's time-series backend, and has everything ready for Claude to analyse.
 podman compose up -d
 ```
 
-This runs four services in order:
+This runs six services in order:
 
 1. **pmlogsynth-generator** — generates PCP archives from `profiles/scenarios/saas-diurnal-week.yml`
 2. **redis-stack** — time-series backend (Valkey/Redis, port 6379)
 3. **pmlogsynth-seeder** — loads the archives into the time-series store
 4. **pcp** — pmcd + pmproxy, ready to serve queries (port 44322)
+5. **grafana** — Grafana with PCP plugin and auto-provisioned datasources (port 3000)
+6. **mcp-grafana** — MCP server for Grafana, SSE transport (port 8000)
 
 The generator and seeder are one-shot jobs; allow ~30–60 seconds for them to complete.
 Check progress with:
@@ -39,7 +41,13 @@ Once seeded, verify data is queryable:
 curl -s "http://localhost:44322/series/query?expr=kernel.all.cpu.user" | head -c 200
 ```
 
-### 2. Connect pmmcp to Claude Code
+### 2. Browse Grafana dashboards
+
+Open http://localhost:3000 — no login required (anonymous admin is enabled). Navigate to **Connections → Data sources** to see the auto-provisioned PCP Valkey (historical) and PCP Vector (live) datasources.
+
+The `mcp-grafana` service exposes a Grafana MCP server at http://localhost:8000/sse for AI agents that need to create dashboards or query Grafana programmatically.
+
+### 3. Connect pmmcp to Claude Code
 
 ```bash
 git clone <repository-url>
@@ -62,7 +70,7 @@ Add to `.mcp.json` in your project root (or `~/.claude/mcp.json` for global conf
 
 Restart Claude Code (or `/mcp` to reload) and confirm **pmmcp** appears in the connected servers list.
 
-### 3. Ask Claude to investigate
+### 4. Ask Claude to investigate
 
 The seeded dataset is `saas-prod-01` — a simulated production host with a week of
 realistic diurnal traffic. Try these to get a feel for what pmmcp can do:
@@ -93,7 +101,7 @@ Compare the morning peak to the overnight baseline on saas-prod-01 across CPU, m
 /investigate_subsystem subsystem=cpu host=saas-prod-01
 ```
 
-### 4. Tear down when done
+### 5. Tear down when done
 
 ```bash
 podman compose down --volumes

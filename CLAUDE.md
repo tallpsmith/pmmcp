@@ -97,6 +97,14 @@ podman compose down
 - PCP image **requires `privileged: true`** — it uses systemd as PID 1; without it the container exits immediately (code 255)
 - Redis host env var is **`KEY_SERVERS: redis-stack:6379`** (NOT `PCP_REDIS_HOST`) — that's what the container entrypoint reads; wrong value causes pmproxy to hang on all series/search calls
 
+## Grafana Compose Gotchas
+
+- PCP plugin is **unsigned** — must use `GF_INSTALL_PLUGINS` with the GitHub release ZIP URL, not the Grafana catalog shorthand
+- All PCP sub-plugins must be listed in `GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS` (app, valkey-datasource, vector-datasource, bpftrace-datasource, flamegraph-panel, breadcrumbs-panel, troubleshooting-panel)
+- mcp-grafana **requires authentication** — it doesn't support anonymous access. Basic auth (`admin/admin`) is simplest for the dev stack
+- Grafana healthcheck uses `curl -sf http://localhost:3000/api/health` — the container must have curl installed (official image does)
+- Datasources are auto-provisioned from `grafana/provisioning/datasources/pcp.yaml` — mounted read-only into the container
+
 ## CI / Local E2E Parity — CRITICAL
 
 **The local compose pipeline and the GitHub Actions E2E workflow MUST test the same topology.** When they diverge, tests pass locally but fail in CI (or vice versa) with no obvious cause.
@@ -232,6 +240,8 @@ The check runs in order: lint → format → unit+integration tests (≥80% cove
 - Python 3.11+ + `mcp[cli]` ≥1.2.0 (FastMCP), `pydantic` v2.x — no new dependencies (010-specialist-agents)
 - N/A — prompts are stateless text generators (010-specialist-agents)
 - Python 3.11+ + `mcp[cli]` ≥1.2.0 (FastMCP), `pydantic` v2.x — no new dependencies (011-specialist-baselining)
+- N/A (infrastructure-only; compose YAML, Grafana provisioning YAML) + `grafana/grafana:latest`, `mcp/grafana` (Docker Hub), `performancecopilot-pcp-app` plugin v5.3.0 (012-grafana-compose)
+- Ephemeral — no persistent volumes for Grafana (012-grafana-compose)
 
 ## Recent Changes
 - 002-add-integration-e2e-tests: Added Python 3.11+ + `mcp[cli]` ≥1.26.0 (FastMCP + ClientSession), `anyio` (memory streams), `respx` (already present — mocks httpx for integration tier), `pytest-asyncio` (already present)
