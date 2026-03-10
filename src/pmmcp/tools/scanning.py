@@ -144,6 +144,9 @@ async def pcp_scan_changes(
         max_metrics: Maximum number of changed metrics to return (default 50).
             For exploration use 50; increase to 200+ for full scan.
         interval: Sampling interval ('auto' selects based on baseline window duration)
+
+    Note: For broad investigations, start with the ``coordinate_investigation`` prompt
+    rather than scanning changes directly — it orchestrates a full multi-subsystem sweep.
     """
     return await _scan_changes_impl(
         get_client(),

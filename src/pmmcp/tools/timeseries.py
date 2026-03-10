@@ -154,6 +154,9 @@ async def pcp_fetch_timeseries(
         limit: Maximum data points per metric/instance (default 500)
         offset: Pagination offset
         expr: Raw PCP series expression (overrides names if provided)
+
+    Note: For broad investigations, start with the ``coordinate_investigation`` prompt
+    rather than fetching metrics directly — it orchestrates a full multi-subsystem sweep.
     """
     return await _fetch_timeseries_impl(
         get_client(),
