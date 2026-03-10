@@ -220,16 +220,27 @@ Rules:
 
 **Mandatory before any `git push`** (required by Constitution v1.2.0, Principle II).
 
-Run either:
+The full check runs: lint → format → unit+integration tests (≥80% coverage) → E2E tests (compose stack + container healthchecks).
+
+**If you are Claude running in a VM** (no podman/docker available):
+- Run `just ci` as a minimum — this covers lint, format, and unit+integration tests
+- Do **not** attempt `pre-push-sanity.sh`, `just e2e`, or any `podman compose` commands — they will fail without a container runtime
+- Prompt the user to run the full suite on their host before pushing:
+  ```
+  ⚠️ I've run `just ci` (lint + tests) — all green.
+  Please run `./pre-commit.sh` or `just e2e` on your host to complete E2E validation before pushing.
+  ```
+
+**If you have container access** (or the user is running directly):
 ```bash
-scripts/pre-push-sanity.sh
+./pre-commit.sh
 ```
 or invoke the Claude skill:
 ```
 /pre-push-sanity
 ```
 
-The check runs in order: lint → format → unit+integration tests (≥80% coverage) → E2E tests (starts compose stack automatically via `just e2e`). E2E is **never skipped** — the compose stack must be buildable and all containers must pass healthchecks before tests run.
+E2E is **never skipped** by humans — the compose stack must be buildable and all containers must pass healthchecks before tests run.
 <!-- MANUAL ADDITIONS END -->
 
 ## Active Technologies
