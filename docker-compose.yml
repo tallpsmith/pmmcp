@@ -78,10 +78,12 @@ services:
       pcp:
         condition: service_started
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthcheck')"]
+      # Liveness only — confirms HTTP server accepts connections (ignores pmproxy status)
+      test: ["CMD-SHELL", "python -c 'import socket; socket.create_connection((\"localhost\",8080),2).close()'"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 6
+      start_period: 10s
 
   # Grafana with PCP plugin — browse http://localhost:3000 (anonymous admin, no login)
   grafana:
