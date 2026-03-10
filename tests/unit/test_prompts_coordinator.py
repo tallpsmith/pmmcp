@@ -119,3 +119,54 @@ def test_coordinator_impl_interpolates_lookback():
 
     text = _coordinate_investigation_impl(request="issue", lookback="6hours")[0]["content"]
     assert "6hours" in text
+
+
+# ---------------------------------------------------------------------------
+# T032-T034: Classification-based ranking in coordinator synthesis
+# ---------------------------------------------------------------------------
+
+
+def test_coordinator_classification_ranking():
+    """T032: Coordinator ranks ANOMALY above BASELINE/RECURRING regardless
+    of severity, with severity as secondary sort within each tier."""
+    from pmmcp.prompts.coordinator import _coordinate_investigation_impl
+
+    text = _coordinate_investigation_impl(request="app is slow")[0]["content"]
+    assert "ANOMALY" in text, "Coordinator missing ANOMALY reference"
+    has_ranking = any(
+        phrase in text.lower()
+        for phrase in ("rank", "prioriti", "above", "tier")
+    )
+    assert has_ranking, "Coordinator missing classification ranking guidance"
+
+
+def test_coordinator_baseline_callout():
+    """T033: Coordinator explicitly calls out findings that are normal
+    behaviour for the host."""
+    from pmmcp.prompts.coordinator import _coordinate_investigation_impl
+
+    text = _coordinate_investigation_impl(request="app is slow")[0]["content"]
+    has_callout = any(
+        phrase in text.lower()
+        for phrase in (
+            "normal behaviour",
+            "normal behavior",
+            "baseline behaviour",
+            "baseline behavior",
+            "chronic",
+        )
+    )
+    assert has_callout, (
+        "Coordinator missing baseline/normal behaviour callout"
+    )
+
+
+def test_coordinator_recurring_pattern_highlight():
+    """T034: Coordinator highlights when an apparent anomaly matches a
+    known recurring pattern."""
+    from pmmcp.prompts.coordinator import _coordinate_investigation_impl
+
+    text = _coordinate_investigation_impl(request="app is slow")[0]["content"]
+    assert "RECURRING" in text or "recurring" in text, (
+        "Coordinator missing recurring pattern reference"
+    )
