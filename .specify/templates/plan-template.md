@@ -35,7 +35,7 @@ For each principle, record **PASS**, **FAIL + justification**, or **N/A + reason
 
 | Principle | Status | Notes / Justification |
 |-----------|--------|----------------------|
-| I. Code Quality — linting enforced, single-responsibility, complexity ≤ 10, peer review | | |
+| I. Code Quality — linting enforced, single-responsibility, complexity ≤ 10, peer review, documentation impact reviewed | | |
 | II. Testing Standards — TDD cycle, ≥ 80% unit coverage, contract tests on interface changes | | |
 | III. UX Consistency — design system adherence, WCAG 2.1 AA, actionable error messages | | |
 | IV. Performance — latency SLA defined, performance budget in CI, profiling before optimization | | |

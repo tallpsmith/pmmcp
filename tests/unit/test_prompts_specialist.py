@@ -183,3 +183,235 @@ def test_specialist_impl_interpolates_lookback():
 
     text = _specialist_investigate_impl("cpu", lookback="4hours")[0]["content"]
     assert "4hours" in text
+
+
+# ---------------------------------------------------------------------------
+# T002: Baseline step presence in domain subsystems
+# ---------------------------------------------------------------------------
+
+_DOMAIN_SUBSYSTEMS = ("cpu", "memory", "disk", "network", "process")
+
+
+def test_baseline_step_present_in_domain_subsystems():
+    """T002: Domain specialists include a Baseline step referencing
+    pcp_fetch_timeseries, pcp_detect_anomalies, and 7-day window."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    for sub in _DOMAIN_SUBSYSTEMS:
+        text = _specialist_investigate_impl(sub)[0]["content"]
+        assert "baseline" in text.lower(), f"{sub}: missing Baseline step"
+        assert "pcp_fetch_timeseries" in text, (
+            f"{sub}: Baseline must reference pcp_fetch_timeseries"
+        )
+        assert "pcp_detect_anomalies" in text, (
+            f"{sub}: Baseline must reference pcp_detect_anomalies"
+        )
+        assert "7-day" in text.lower() or "7 day" in text.lower(), (
+            f"{sub}: Baseline must reference 7-day window"
+        )
+
+
+# ---------------------------------------------------------------------------
+# T003: Cross-cutting does NOT include Baseline step
+# ---------------------------------------------------------------------------
+
+
+def test_baseline_step_absent_from_crosscutting():
+    """T003: Cross-cutting specialist does NOT have a Baseline workflow step."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    text = _specialist_investigate_impl("crosscutting")[0]["content"]
+    # Cross-cutting should not have a numbered "Baseline" step in its workflow
+    # (it may reference the word "baseline" in domain knowledge for classification,
+    # but should NOT have a "## Baseline" or "**Baseline**" workflow step)
+    workflow_section = text.split("## Workflow")[1] if "## Workflow" in text else ""
+    assert "baseline" not in workflow_section.lower(), (
+        "Cross-cutting must NOT have a Baseline workflow step"
+    )
+
+
+# ---------------------------------------------------------------------------
+# T004: Classification fields in report structure
+# ---------------------------------------------------------------------------
+
+
+def test_classification_fields_in_domain_report_guidance():
+    """T004: Domain specialist output includes classification, ANOMALY,
+    RECURRING, BASELINE, baseline_context, severity_despite_baseline."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    required_terms = [
+        "classification",
+        "ANOMALY",
+        "RECURRING",
+        "BASELINE",
+        "baseline_context",
+        "severity_despite_baseline",
+    ]
+    for sub in _DOMAIN_SUBSYSTEMS:
+        text = _specialist_investigate_impl(sub)[0]["content"]
+        for term in required_terms:
+            assert term in text, f"{sub}: missing '{term}' in report guidance"
+
+
+# ---------------------------------------------------------------------------
+# T005: Narrative guidance for chronic problems
+# ---------------------------------------------------------------------------
+
+
+def test_chronic_problem_narrative_guidance():
+    """T005: Domain specialists include narrative guidance for BASELINE-classified
+    findings — explaining chronic problems in human terms."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    for sub in _DOMAIN_SUBSYSTEMS:
+        text = _specialist_investigate_impl(sub)[0]["content"].lower()
+        has_chronic_language = any(
+            phrase in text
+            for phrase in (
+                "not a new problem",
+                "your normal",
+                "chronic",
+                "historically typical",
+                "been this way",
+            )
+        )
+        assert has_chronic_language, (
+            f"{sub}: missing narrative guidance for chronic/baseline findings"
+        )
+
+
+# ---------------------------------------------------------------------------
+# T010-T013: Baseline-aware heuristics in domain knowledge
+# ---------------------------------------------------------------------------
+
+
+def test_cpu_domain_knowledge_baseline_heuristic():
+    """T010: CPU domain_knowledge includes guidance to check whether current
+    CPU levels are typical for this time of day over the past week."""
+    from pmmcp.prompts.specialist import _SPECIALIST_KNOWLEDGE
+
+    dk = _SPECIALIST_KNOWLEDGE["cpu"]["domain_knowledge"].lower()
+    assert "time of day" in dk or "past week" in dk or "7-day" in dk or "baseline" in dk, (
+        "CPU domain_knowledge missing baseline-aware heuristic"
+    )
+
+
+def test_memory_domain_knowledge_baseline_heuristic():
+    """T011: Memory domain_knowledge includes guidance to compare memory growth
+    against the 7-day baseline to distinguish leaks from normal working-set growth."""
+    from pmmcp.prompts.specialist import _SPECIALIST_KNOWLEDGE
+
+    dk = _SPECIALIST_KNOWLEDGE["memory"]["domain_knowledge"].lower()
+    has_baseline = any(
+        phrase in dk
+        for phrase in ("7-day", "baseline", "working-set growth", "normal growth", "past week")
+    )
+    assert has_baseline, "Memory domain_knowledge missing baseline-aware leak heuristic"
+
+
+def test_disk_domain_knowledge_baseline_heuristic():
+    """T012: Disk domain_knowledge includes guidance to check whether I/O spikes
+    recur at the same time daily (scheduled jobs)."""
+    from pmmcp.prompts.specialist import _SPECIALIST_KNOWLEDGE
+
+    dk = _SPECIALIST_KNOWLEDGE["disk"]["domain_knowledge"].lower()
+    has_schedule = any(
+        phrase in dk
+        for phrase in ("same time daily", "scheduled job", "recur", "backup", "log rotation")
+    )
+    assert has_schedule, "Disk domain_knowledge missing baseline-aware scheduled job heuristic"
+
+
+def test_network_domain_knowledge_baseline_heuristic():
+    """T013a: Network domain_knowledge contains at least one baseline-aware heuristic."""
+    from pmmcp.prompts.specialist import _SPECIALIST_KNOWLEDGE
+
+    dk = _SPECIALIST_KNOWLEDGE["network"]["domain_knowledge"].lower()
+    has_baseline = any(
+        phrase in dk for phrase in ("baseline", "7-day", "past week", "normal variance")
+    )
+    assert has_baseline, "Network domain_knowledge missing baseline-aware heuristic"
+
+
+def test_process_domain_knowledge_baseline_heuristic():
+    """T013b: Process domain_knowledge contains at least one baseline-aware heuristic."""
+    from pmmcp.prompts.specialist import _SPECIALIST_KNOWLEDGE
+
+    dk = _SPECIALIST_KNOWLEDGE["process"]["domain_knowledge"].lower()
+    has_baseline = any(
+        phrase in dk for phrase in ("baseline", "7-day", "past week", "7-day pattern")
+    )
+    assert has_baseline, "Process domain_knowledge missing baseline-aware heuristic"
+
+
+# ---------------------------------------------------------------------------
+# T026-T028: Cross-cutting classification prioritisation
+# ---------------------------------------------------------------------------
+
+
+def test_crosscutting_classification_prioritisation():
+    """T026: Cross-cutting output includes guidance to prioritise
+    ANOMALY-classified findings over RECURRING or BASELINE."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    text = _specialist_investigate_impl("crosscutting")[0]["content"]
+    assert "ANOMALY" in text, "Cross-cutting missing ANOMALY reference"
+    has_priority = any(phrase in text.lower() for phrase in ("prioriti", "rank", "above", "higher"))
+    assert has_priority, "Cross-cutting missing prioritisation guidance for ANOMALY"
+
+
+def test_crosscutting_correlated_anomalies():
+    """T027: Cross-cutting output includes guidance to flag correlated
+    anomalies across multiple subsystems at the same timestamp."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    text = _specialist_investigate_impl("crosscutting")[0]["content"].lower()
+    assert "correlat" in text, "Cross-cutting missing correlated anomaly guidance"
+    has_multi = any(
+        phrase in text for phrase in ("multiple subsystem", "across subsystem", "same timestamp")
+    )
+    assert has_multi, "Cross-cutting missing multi-subsystem anomaly correlation"
+
+
+def test_crosscutting_mixed_classification_guidance():
+    """T028: Cross-cutting output includes guidance to note when one
+    subsystem reports BASELINE while another reports ANOMALY."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    text = _specialist_investigate_impl("crosscutting")[0]["content"]
+    assert "BASELINE" in text and "ANOMALY" in text, (
+        "Cross-cutting missing BASELINE/ANOMALY mixed classification ref"
+    )
+
+
+# ---------------------------------------------------------------------------
+# T020-T021: Graceful degradation when baseline data is insufficient
+# ---------------------------------------------------------------------------
+
+
+def test_graceful_degradation_fallback_instruction():
+    """T020: Domain specialists include instructions to fall back to
+    threshold-only analysis if pcp_detect_anomalies returns insufficient data."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    for sub in _DOMAIN_SUBSYSTEMS:
+        text = _specialist_investigate_impl(sub)[0]["content"].lower()
+        assert "threshold-only" in text or "threshold only" in text, (
+            f"{sub}: missing threshold-only fallback instruction"
+        )
+        assert "insufficient" in text or "fall back" in text or "fallback" in text, (
+            f"{sub}: missing fallback trigger language"
+        )
+
+
+def test_graceful_degradation_report_limitation():
+    """T021: Domain specialists include instructions to note 'insufficient baseline'
+    or similar limitation wording in the report when degraded."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    for sub in _DOMAIN_SUBSYSTEMS:
+        text = _specialist_investigate_impl(sub)[0]["content"].lower()
+        assert "insufficient baseline" in text, (
+            f"{sub}: missing 'insufficient baseline' limitation note"
+        )
