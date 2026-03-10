@@ -26,5 +26,7 @@ class ServerConfig(BaseSettings):
     transport: Literal["stdio", "streamable-http"] = "stdio"
     host: str = "127.0.0.1"
     port: int = 8080
+    grafana_folder: str = "pmmcp-triage"
+    report_dir: Path = Path("~/.pmmcp/reports")
 
     model_config = {"env_prefix": "PMMCP_"}
