@@ -45,9 +45,9 @@ mcp-grafana service health after compose stack startup.
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation (Red-Green-Refactor)**
 
-- [ ] T003 [P] [US1] E2E test: Grafana accessible and healthy — verify GET http://localhost:3000/api/health returns 200 in tests/e2e/test_grafana.py
-- [ ] T004 [P] [US1] E2E test: PCP datasources provisioned — verify GET http://localhost:3000/api/datasources returns both "PCP Valkey" and "PCP Vector" entries in tests/e2e/test_grafana.py
-- [ ] T005 [P] [US1] E2E test: PCP Valkey datasource healthy — verify datasource health check endpoint confirms pmproxy connectivity in tests/e2e/test_grafana.py
+- [x] T003 [P] [US1] E2E test: Grafana accessible and healthy — verify GET http://localhost:3000/api/health returns 200 in tests/e2e/test_grafana.py
+- [x] T004 [P] [US1] E2E test: PCP datasources provisioned — verify GET http://localhost:3000/api/datasources returns both "PCP Valkey" and "PCP Vector" entries in tests/e2e/test_grafana.py
+- [x] T005 [P] [US1] E2E test: PCP Valkey datasource healthy — verify datasource health check endpoint confirms pmproxy connectivity in tests/e2e/test_grafana.py
 
 ### Implementation for User Story 1
 
@@ -68,7 +68,7 @@ mcp-grafana service health after compose stack startup.
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation (Red-Green-Refactor)**
 
-- [ ] T008 [P] [US2] E2E test: mcp-grafana SSE endpoint responds — verify GET http://localhost:8000/sse returns a valid SSE connection in tests/e2e/test_grafana.py
+- [x] T008 [P] [US2] E2E test: mcp-grafana SSE endpoint responds — verify GET http://localhost:8000/sse returns a valid SSE connection in tests/e2e/test_grafana.py
 
 ### Implementation for User Story 2
 
