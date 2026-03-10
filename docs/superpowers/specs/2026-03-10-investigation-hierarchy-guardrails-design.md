@@ -68,7 +68,7 @@ Also includes the auto-trigger heuristic: "If your investigation has surfaced fi
 
 ### E. Config additions
 
-Add to `PmproxyConfig` (per issue #10):
+Add to `ServerConfig` (env prefix `PMMCP_`, not `PmproxyConfig` which is for pmproxy connection settings):
 
 | Setting | Env var | Default | Purpose |
 |---------|---------|---------|---------|
