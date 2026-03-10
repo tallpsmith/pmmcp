@@ -95,9 +95,21 @@ After all specialists have reported (or failed), synthesise their findings:
    story of what happened. "At 14:32, memory utilisation crossed 95%, triggering swap \
    activity, which caused disk I/O to spike, which manifested as CPU iowait."
 
-4. **Rank by impact**: Order findings by severity and blast radius, not by subsystem.
+4. **Rank by classification, then severity**: Group findings by classification tier, \
+   not by subsystem. ANOMALY findings rank above RECURRING, which rank above BASELINE — \
+   regardless of severity. Within each tier, sort by severity (critical → warning → info). \
+   What changed (ANOMALY) is more actionable than what has always been wrong (BASELINE).
 
-5. **Recommend actions**: Concrete next steps — not "investigate further" but \
+5. **Call out normal behaviour**: Explicitly identify findings that are baseline \
+   behaviour — chronic conditions that are normal for this host. These still matter \
+   (a host whose "normal" is CPU-saturated is sick), but they are not the trigger \
+   for the current incident.
+
+6. **Highlight recurring patterns**: When an apparent anomaly matches a known \
+   recurring pattern (RECURRING classification from specialists), call this out — \
+   "this spike looks alarming but occurs daily at 2am during the backup window."
+
+7. **Recommend actions**: Concrete next steps — not "investigate further" but \
    "check process X for memory leak" or "increase swap space as immediate mitigation."
 
 ## Output Structure
@@ -109,10 +121,20 @@ After all specialists have reported (or failed), synthesise their findings:
 ## Root Cause Analysis
 <unified narrative with timeline and cross-subsystem correlation>
 
-## Findings by Severity
+## Findings by Classification & Severity
+
+### New Anomalies
 1. [CRITICAL] ...
 2. [WARNING] ...
-3. [INFO] ...
+
+### Recurring Patterns
+1. [WARNING] ... (occurs daily at <time>)
+
+### Baseline Behaviour (Chronic Conditions)
+1. [WARNING] ... (has been this way for 7+ days — not a new problem)
+
+### Normal Operation
+- <subsystem>: no anomalies detected
 
 ## Recommendations
 1. Immediate: ...
