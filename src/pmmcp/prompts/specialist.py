@@ -111,7 +111,10 @@ specific processes by name/PID when hotproc data is available.""",
 5. Load average vs individual subsystems: high load with low CPU user% → the load is I/O-bound or memory-bound, not compute-bound.
 6. Time correlation: find the exact moment things changed, then look at ALL subsystems at that timestamp.
 7. Use `pcp_compare_windows` to quantify before/after — "it got 3× worse" is more useful than "it's bad."
-8. Check derived metrics (derived.cpu.utilisation, derived.mem.utilisation, derived.disk.utilisation) for quick triage.""",
+8. Check derived metrics (derived.cpu.utilisation, derived.mem.utilisation, derived.disk.utilisation) for quick triage.
+9. Prioritise ANOMALY-classified findings above RECURRING or BASELINE — what changed is more actionable than what has always been wrong.
+10. Flag correlated anomalies across multiple subsystems at the same timestamp with higher confidence — if disk and CPU both spike simultaneously, the root cause is likely upstream of both.
+11. When one subsystem reports BASELINE while another reports ANOMALY at the same time, the ANOMALY subsystem is more likely root cause — the BASELINE subsystem's chronic condition is not the trigger.""",
         "report_guidance": """\
 For each finding report: the originating subsystem, metric, observed value, \
 cross-subsystem correlation (e.g., "disk saturation causing CPU iowait"), \
