@@ -346,6 +346,56 @@ def test_process_domain_knowledge_baseline_heuristic():
 
 
 # ---------------------------------------------------------------------------
+# T026-T028: Cross-cutting classification prioritisation
+# ---------------------------------------------------------------------------
+
+
+def test_crosscutting_classification_prioritisation():
+    """T026: Cross-cutting output includes guidance to prioritise
+    ANOMALY-classified findings over RECURRING or BASELINE."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    text = _specialist_investigate_impl("crosscutting")[0]["content"]
+    assert "ANOMALY" in text, "Cross-cutting missing ANOMALY reference"
+    has_priority = any(
+        phrase in text.lower()
+        for phrase in ("prioriti", "rank", "above", "higher")
+    )
+    assert has_priority, (
+        "Cross-cutting missing prioritisation guidance for ANOMALY"
+    )
+
+
+def test_crosscutting_correlated_anomalies():
+    """T027: Cross-cutting output includes guidance to flag correlated
+    anomalies across multiple subsystems at the same timestamp."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    text = _specialist_investigate_impl("crosscutting")[0]["content"].lower()
+    assert "correlat" in text, (
+        "Cross-cutting missing correlated anomaly guidance"
+    )
+    has_multi = any(
+        phrase in text
+        for phrase in ("multiple subsystem", "across subsystem", "same timestamp")
+    )
+    assert has_multi, (
+        "Cross-cutting missing multi-subsystem anomaly correlation"
+    )
+
+
+def test_crosscutting_mixed_classification_guidance():
+    """T028: Cross-cutting output includes guidance to note when one
+    subsystem reports BASELINE while another reports ANOMALY."""
+    from pmmcp.prompts.specialist import _specialist_investigate_impl
+
+    text = _specialist_investigate_impl("crosscutting")[0]["content"]
+    assert "BASELINE" in text and "ANOMALY" in text, (
+        "Cross-cutting missing BASELINE/ANOMALY mixed classification ref"
+    )
+
+
+# ---------------------------------------------------------------------------
 # T020-T021: Graceful degradation when baseline data is insufficient
 # ---------------------------------------------------------------------------
 
