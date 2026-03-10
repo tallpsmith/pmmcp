@@ -83,7 +83,7 @@ flowchart TD
     PROC --> SYN
     CROSS --> SYN
 
-    SYN --> OUT["Unified Report\n• Root cause narrative\n• Timeline correlation\n• Findings ranked by severity\n• Concrete recommendations"]
+    SYN --> OUT["Unified Report\n• Root cause narrative\n• Timeline correlation\n• Findings ranked by classification & severity\n  (ANOMALY > RECURRING > BASELINE)\n• Concrete recommendations"]
 
     style CI fill:#2d6a4f,color:#fff
     style PAR fill:#40916c,color:#fff
@@ -107,10 +107,13 @@ relationships, and interpretation rules from experienced performance engineers.
 
 ## Specialist Workflow
 
-Every specialist follows the same 4-step discipline: discover what metrics exist,
-fetch the data, analyse against domain heuristics, then report structured findings.
-This prevents the common failure mode of querying metrics that don't exist on the
-target host.
+Domain specialists (CPU, Memory, Disk, Network, Process) follow a 5-step
+discipline: discover what metrics exist, establish a 7-day baseline for anomaly
+detection, fetch current data, analyse against domain heuristics with baseline
+context, then report structured and classified findings.
+
+The **cross-cutting** specialist does NOT include a Baseline step — it consumes
+classifications from the domain specialists rather than baselining independently.
 
 ```mermaid
 sequenceDiagram
@@ -126,22 +129,29 @@ sequenceDiagram
         T-->>S: Available metric names
     end
 
+    rect rgb(225, 235, 225)
+        Note over S,T: 2. Baseline (domain specialists only)
+        S->>T: pcp_fetch_timeseries(names=[...], interval="1hour", start="-7days")
+        T-->>S: 7-day historical data
+        S->>T: pcp_detect_anomalies(recent vs 7-day baseline)
+        T-->>S: Anomaly results (z-scores, directions)
+        Note over S: Note results for step 4<br/>If insufficient data → threshold-only fallback
+    end
+
     rect rgb(230, 235, 245)
-        Note over S,T: 2. Fetch
+        Note over S,T: 3. Fetch
         S->>T: pcp_fetch_timeseries(names=[...])
-        T-->>S: Time-series data
-        S->>T: pcp_compare_windows(...) [optional]
-        T-->>S: Statistical comparison
+        T-->>S: Current investigation window data
     end
 
     rect rgb(245, 235, 225)
-        Note over S,T: 3. Analyse
-        Note over S: Apply domain heuristics<br/>Check thresholds & correlations<br/>Identify anomalies
+        Note over S,T: 4. Analyse
+        Note over S: Apply domain heuristics<br/>Check thresholds & correlations<br/>Classify: ANOMALY / RECURRING / BASELINE<br/>Assign severity_despite_baseline
     end
 
     rect rgb(240, 230, 230)
-        Note over S,T: 4. Report
-        S-->>C: Structured findings<br/>(metric, value, severity,<br/>affected window, recommendation)
+        Note over S,T: 5. Report
+        S-->>C: Classified findings<br/>(metric, value, classification,<br/>baseline_context, severity,<br/>severity_despite_baseline)
     end
 ```
 
@@ -155,8 +165,14 @@ coordinator synthesises findings:
 2. **Timeline correlation** — the subsystem that changed first is the likely root
    cause
 3. **Unified narrative** — tell the story of what happened, not just list findings
-4. **Rank by impact** — order by severity and blast radius
-5. **Recommend actions** — concrete next steps, not "investigate further"
+4. **Rank by classification, then severity** — ANOMALY findings rank above
+   RECURRING, which rank above BASELINE (severity is secondary sort within each
+   tier). What changed is more actionable than what has always been wrong.
+5. **Call out normal behaviour** — explicitly identify chronic baseline conditions
+6. **Highlight recurring patterns** — flag when an apparent anomaly matches a known
+   recurring pattern (e.g., daily backup window)
+7. **Recommend actions** — concrete next steps, not "investigate further"
 
 The output follows a structured format: executive summary → root cause analysis →
-findings by severity → recommendations → specialist status.
+findings by classification & severity (New Anomalies → Recurring Patterns →
+Baseline Behaviour → Normal Operation) → recommendations → specialist status.

@@ -357,13 +357,8 @@ def test_crosscutting_classification_prioritisation():
 
     text = _specialist_investigate_impl("crosscutting")[0]["content"]
     assert "ANOMALY" in text, "Cross-cutting missing ANOMALY reference"
-    has_priority = any(
-        phrase in text.lower()
-        for phrase in ("prioriti", "rank", "above", "higher")
-    )
-    assert has_priority, (
-        "Cross-cutting missing prioritisation guidance for ANOMALY"
-    )
+    has_priority = any(phrase in text.lower() for phrase in ("prioriti", "rank", "above", "higher"))
+    assert has_priority, "Cross-cutting missing prioritisation guidance for ANOMALY"
 
 
 def test_crosscutting_correlated_anomalies():
@@ -372,16 +367,11 @@ def test_crosscutting_correlated_anomalies():
     from pmmcp.prompts.specialist import _specialist_investigate_impl
 
     text = _specialist_investigate_impl("crosscutting")[0]["content"].lower()
-    assert "correlat" in text, (
-        "Cross-cutting missing correlated anomaly guidance"
-    )
+    assert "correlat" in text, "Cross-cutting missing correlated anomaly guidance"
     has_multi = any(
-        phrase in text
-        for phrase in ("multiple subsystem", "across subsystem", "same timestamp")
+        phrase in text for phrase in ("multiple subsystem", "across subsystem", "same timestamp")
     )
-    assert has_multi, (
-        "Cross-cutting missing multi-subsystem anomaly correlation"
-    )
+    assert has_multi, "Cross-cutting missing multi-subsystem anomaly correlation"
 
 
 def test_crosscutting_mixed_classification_guidance():

@@ -133,10 +133,7 @@ def test_coordinator_classification_ranking():
 
     text = _coordinate_investigation_impl(request="app is slow")[0]["content"]
     assert "ANOMALY" in text, "Coordinator missing ANOMALY reference"
-    has_ranking = any(
-        phrase in text.lower()
-        for phrase in ("rank", "prioriti", "above", "tier")
-    )
+    has_ranking = any(phrase in text.lower() for phrase in ("rank", "prioriti", "above", "tier"))
     assert has_ranking, "Coordinator missing classification ranking guidance"
 
 
@@ -156,9 +153,7 @@ def test_coordinator_baseline_callout():
             "chronic",
         )
     )
-    assert has_callout, (
-        "Coordinator missing baseline/normal behaviour callout"
-    )
+    assert has_callout, "Coordinator missing baseline/normal behaviour callout"
 
 
 def test_coordinator_recurring_pattern_highlight():
