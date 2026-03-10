@@ -96,6 +96,39 @@ podman compose down
 
 - PCP image **requires `privileged: true`** — it uses systemd as PID 1; without it the container exits immediately (code 255)
 - Redis host env var is **`KEY_SERVERS: redis-stack:6379`** (NOT `PCP_REDIS_HOST`) — that's what the container entrypoint reads; wrong value causes pmproxy to hang on all series/search calls
+- **Podman splits `CMD` array args on semicolons** — Python one-liners with `;` get mangled. Always use `CMD-SHELL` for healthchecks containing semicolons: `["CMD-SHELL", "python -c 'import foo; foo.bar()'"]`
+
+## Grafana Compose Gotchas
+
+- PCP plugin is **unsigned** — must use `GF_INSTALL_PLUGINS` with the GitHub release ZIP URL, not the Grafana catalog shorthand
+- All PCP sub-plugins must be listed in `GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS` (app, valkey-datasource, vector-datasource, bpftrace-datasource, flamegraph-panel, breadcrumbs-panel, troubleshooting-panel)
+- mcp-grafana **requires authentication** — it doesn't support anonymous access. Basic auth (`admin/admin`) is simplest for the dev stack
+- Grafana healthcheck uses `curl -sf http://localhost:3000/api/health` — the container must have curl installed (official image does)
+- Datasources are auto-provisioned from `grafana/provisioning/datasources/pcp.yaml` — mounted read-only into the container
+
+## Grafana Dashboard Conventions (Investigation Output)
+
+When creating dashboards as part of an investigation:
+
+| Convention | Value |
+|-----------|-------|
+| Folder | `pmmcp-triage` (configurable via `PMMCP_GRAFANA_FOLDER`) |
+| Naming | `YYYY-MM-DD <short summary>` (e.g., `2026-03-10 memory cascade saas-prod-01`) |
+| Tagging | Always include `pmmcp-generated` |
+| Deeplink | After creation, call `generate_deeplink` and return URL to user |
+| Auto-trigger | Offer visualisation when findings span 3+ metrics or 2+ subsystems |
+
+## Investigation Prompt Hierarchy
+
+The investigation prompt hierarchy is:
+
+```
+session_init → coordinate_investigation → specialist_investigate (×6)
+```
+
+- **ALWAYS** start broad investigations with `coordinate_investigation`
+- **DO NOT** call raw tools (`pcp_fetch_timeseries`, `pcp_detect_anomalies`) directly for open-ended investigations
+- Specialist prompts are dispatched by the coordinator — don't call them directly unless targeting a specific subsystem
 
 ## CI / Local E2E Parity — CRITICAL
 
@@ -211,16 +244,27 @@ Rules:
 
 **Mandatory before any `git push`** (required by Constitution v1.2.0, Principle II).
 
-Run either:
+The full check runs: lint → format → unit+integration tests (≥80% coverage) → E2E tests (compose stack + container healthchecks).
+
+**If you are Claude running in a VM** (no podman/docker available):
+- Run `just ci` as a minimum — this covers lint, format, and unit+integration tests
+- Do **not** attempt `pre-push-sanity.sh`, `just e2e`, or any `podman compose` commands — they will fail without a container runtime
+- Prompt the user to run the full suite on their host before pushing:
+  ```
+  ⚠️ I've run `just ci` (lint + tests) — all green.
+  Please run `./pre-commit.sh` or `just e2e` on your host to complete E2E validation before pushing.
+  ```
+
+**If you have container access** (or the user is running directly):
 ```bash
-scripts/pre-push-sanity.sh
+./pre-commit.sh
 ```
 or invoke the Claude skill:
 ```
 /pre-push-sanity
 ```
 
-The check runs in order: lint → format → unit+integration tests (≥80% coverage) → E2E tests (starts compose stack automatically via `just e2e`). E2E is **never skipped** — the compose stack must be buildable and all containers must pass healthchecks before tests run.
+E2E is **never skipped** by humans — the compose stack must be buildable and all containers must pass healthchecks before tests run.
 <!-- MANUAL ADDITIONS END -->
 
 ## Active Technologies
@@ -232,6 +276,8 @@ The check runs in order: lint → format → unit+integration tests (≥80% cove
 - Python 3.11+ + `mcp[cli]` ≥1.2.0 (FastMCP), `pydantic` v2.x — no new dependencies (010-specialist-agents)
 - N/A — prompts are stateless text generators (010-specialist-agents)
 - Python 3.11+ + `mcp[cli]` ≥1.2.0 (FastMCP), `pydantic` v2.x — no new dependencies (011-specialist-baselining)
+- N/A (infrastructure-only; compose YAML, Grafana provisioning YAML) + `grafana/grafana:latest`, `mcp/grafana` (Docker Hub), `performancecopilot-pcp-app` plugin v5.3.0 (012-grafana-compose)
+- Ephemeral — no persistent volumes for Grafana (012-grafana-compose)
 
 ## Recent Changes
 - 002-add-integration-e2e-tests: Added Python 3.11+ + `mcp[cli]` ≥1.26.0 (FastMCP + ClientSession), `anyio` (memory streams), `respx` (already present — mocks httpx for integration tier), `pytest-asyncio` (already present)

@@ -99,3 +99,45 @@ def test_session_init_references_coordinate_investigation():
     assert "coordinate_investigation" in full_text, (
         "session_init must reference coordinate_investigation as investigation entry point"
     )
+
+
+def test_session_init_assertive_coordinator_language():
+    """session_init uses assertive language (ALWAYS/DO NOT) for coordinator guidance."""
+    result = _session_init_impl()
+    full_text = " ".join(msg["content"] for msg in result)
+    upper_text = full_text.upper()
+    assert "ALWAYS" in upper_text or "DO NOT" in upper_text or "MUST" in upper_text, (
+        "session_init must use assertive language directing to coordinate_investigation"
+    )
+
+
+def test_session_init_coordinator_before_derived_metrics():
+    """Coordinator guidance appears before the derived metrics registration steps."""
+    result = _session_init_impl()
+    full_text = " ".join(msg["content"] for msg in result)
+    coord_pos = full_text.find("coordinate_investigation")
+    derive_pos = full_text.find("Step 1")
+    assert coord_pos < derive_pos, (
+        "Coordinator guidance must appear before Step 1 (derived metrics)"
+    )
+
+
+def test_session_init_grafana_preflight_references():
+    """session_init includes Grafana preflight discovery workflow."""
+    result = _session_init_impl()
+    full_text = " ".join(msg["content"] for msg in result)
+    assert "list_datasources" in full_text, (
+        "session_init must reference list_datasources for Grafana preflight"
+    )
+    assert "performancecopilot" in full_text.lower(), (
+        "session_init must reference PCP datasource type for validation"
+    )
+
+
+def test_session_init_grafana_fallback_cascade():
+    """session_init includes fallback cascade when Grafana is unavailable."""
+    result = _session_init_impl()
+    full_text = " ".join(msg["content"] for msg in result).lower()
+    assert "fallback" in full_text or "unavailable" in full_text, (
+        "session_init must describe fallback when Grafana is unavailable"
+    )

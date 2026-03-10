@@ -140,6 +140,9 @@ async def pcp_detect_anomalies(
         z_score_threshold: Z-score above which a deviation is anomalous (default 2.0)
         host: Target hostname (empty means all hosts)
         interval: Sampling interval ('auto' selects based on baseline window duration)
+
+    Note: For broad investigations, start with the ``coordinate_investigation`` prompt
+    rather than running anomaly detection directly — it orchestrates a full multi-subsystem sweep.
     """
     return await _detect_anomalies_impl(
         get_client(),

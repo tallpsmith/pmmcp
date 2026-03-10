@@ -165,3 +165,47 @@ def test_coordinator_recurring_pattern_highlight():
     assert "RECURRING" in text or "recurring" in text, (
         "Coordinator missing recurring pattern reference"
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 visualisation tests
+# ---------------------------------------------------------------------------
+
+
+def test_coordinator_phase3_visualisation():
+    """Coordinator includes Phase 3 visualisation guidance."""
+    from pmmcp.prompts.coordinator import _coordinate_investigation_impl
+
+    text = _coordinate_investigation_impl(request="app is slow")[0]["content"]
+    assert "Phase 3" in text or "phase 3" in text.lower(), "Coordinator missing Phase 3"
+    assert "dashboard" in text.lower(), "Coordinator Phase 3 must reference dashboard creation"
+
+
+def test_coordinator_grafana_conventions():
+    """Coordinator includes Grafana dashboard conventions from issue #10."""
+    from pmmcp.prompts.coordinator import _coordinate_investigation_impl
+
+    text = _coordinate_investigation_impl(request="app is slow")[0]["content"]
+    assert "pmmcp-triage" in text, "Missing folder convention"
+    assert "pmmcp-generated" in text, "Missing tag convention"
+    assert "YYYY-MM-DD" in text, "Missing naming convention"
+
+
+def test_coordinator_visualisation_fallback_cascade():
+    """Coordinator includes fallback cascade (Grafana -> HTML -> text)."""
+    from pmmcp.prompts.coordinator import _coordinate_investigation_impl
+
+    text = _coordinate_investigation_impl(request="app is slow")[0]["content"].lower()
+    assert "fallback" in text or "unavailable" in text, (
+        "Coordinator missing visualisation fallback cascade"
+    )
+
+
+def test_coordinator_deeplink_guidance():
+    """Coordinator instructs returning a deeplink after dashboard creation."""
+    from pmmcp.prompts.coordinator import _coordinate_investigation_impl
+
+    text = _coordinate_investigation_impl(request="app is slow")[0]["content"].lower()
+    assert "deeplink" in text or "deep link" in text or "url" in text, (
+        "Coordinator must instruct returning dashboard URL/deeplink"
+    )

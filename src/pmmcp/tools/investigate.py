@@ -204,6 +204,10 @@ async def pcp_quick_investigate(
         baseline_days: Number of days before the comparison window to use as
             the baseline for anomaly detection.
         host: Target host. Empty = default pmproxy host.
+
+    Note: For broad 'something is wrong' investigations spanning multiple subsystems,
+    prefer the ``coordinate_investigation`` prompt — it dispatches 6 specialist
+    sub-agents in parallel for comprehensive coverage.
     """
     return await _quick_investigate_impl(
         get_client(),

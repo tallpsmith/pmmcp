@@ -51,9 +51,27 @@ def _session_init_impl(
     content = f"""\
 You are initialising a PCP monitoring session{host_clause}{timerange_clause}.
 
-Register the following canonical derived metrics using `pcp_derive_metric`, \
-then verify each is available with `pcp_fetch_live`. Report results without aborting \
-if any metric fails — note failures and continue.
+## IMPORTANT — Investigation Entry Point
+
+**ALWAYS** use the `coordinate_investigation` prompt for broad performance investigations. \
+It dispatches 6 specialist sub-agents (cpu, memory, disk, network, process, crosscutting) \
+in parallel, then synthesises findings into a unified root-cause narrative with \
+cross-subsystem correlation. **Do NOT** call individual tools (`pcp_fetch_timeseries`, \
+`pcp_detect_anomalies`, etc.) or specialist prompts directly unless you have a specific, \
+targeted question about a single known metric.
+
+## Grafana Preflight — Datasource Discovery
+
+Before any investigation, check whether Grafana visualisation is available:
+
+1. Call `mcp-grafana.list_datasources` to enumerate configured datasources.
+2. Look for a datasource of type `performancecopilot-valkey-datasource` or \
+`performancecopilot-vector-datasource`.
+3. If found, note its **UID** and **URL** for later dashboard creation.
+4. **Match**: Grafana features enabled — investigation prompts will create dashboards \
+in the `pmmcp-triage` folder, named `YYYY-MM-DD <summary>`, tagged `pmmcp-generated`.
+5. **No match / no mcp-grafana**: Grafana unavailable — fall back to text output or \
+offer an HTML report. This is not an error; pmmcp works fully standalone.
 
 ## Step 1 — Register Derived Metrics
 
@@ -87,13 +105,6 @@ For each metric, report whether registration and verification succeeded or faile
 
 **Do not abort if one or more verifications fail.** Report which metrics are available \
 and which are not, so downstream investigations know which derived metrics can be used.
-
-## Next Step — Investigation
-
-For broad performance investigations, use the `coordinate_investigation` prompt. \
-It dispatches 6 specialist sub-agents (cpu, memory, disk, network, process, crosscutting) \
-in parallel, then synthesises findings into a unified root-cause narrative. \
-This is the recommended entry point for any "something is wrong" investigation.
 """
 
     return [{"role": "user", "content": content}]

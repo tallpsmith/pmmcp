@@ -35,5 +35,13 @@ ci: check test
 # Uses --wait to match CI behaviour — all containers must be healthy before tests run
 e2e:
     PROFILES_DIR=./profiles/e2e podman compose up -d --wait --wait-timeout 120
-    PMPROXY_URL=http://localhost:44322 uv run python -m pytest -m e2e -q
+    PMPROXY_URL=http://localhost:44322 GRAFANA_URL=http://localhost:3000 MCP_GRAFANA_URL=http://localhost:8000 uv run python -m pytest -m e2e -q
     @echo "Stack still running — run 'podman compose down --volumes' to purge seeded data before next run"
+
+# Brings up the full stack, seeded (not e2e)
+doit:
+   podman compose up -d --wait --wait-timeout 120
+
+# Removes all containers and their volumes for a clean state
+teardown:
+    podman compose down --volumes
