@@ -200,8 +200,12 @@ def test_baseline_step_present_in_domain_subsystems():
     for sub in _DOMAIN_SUBSYSTEMS:
         text = _specialist_investigate_impl(sub)[0]["content"]
         assert "baseline" in text.lower(), f"{sub}: missing Baseline step"
-        assert "pcp_fetch_timeseries" in text, f"{sub}: Baseline must reference pcp_fetch_timeseries"
-        assert "pcp_detect_anomalies" in text, f"{sub}: Baseline must reference pcp_detect_anomalies"
+        assert "pcp_fetch_timeseries" in text, (
+            f"{sub}: Baseline must reference pcp_fetch_timeseries"
+        )
+        assert "pcp_detect_anomalies" in text, (
+            f"{sub}: Baseline must reference pcp_detect_anomalies"
+        )
         assert "7-day" in text.lower() or "7 day" in text.lower(), (
             f"{sub}: Baseline must reference 7-day window"
         )
