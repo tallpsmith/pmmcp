@@ -186,6 +186,27 @@ def investigate_subsystem(subsystem: str, ...) -> list[dict]:
 - Registration: side-effect import `import pmmcp.prompts` in `server.py` (bottom, like tools)
 - Contract tests use `srv.mcp._prompt_manager.list_prompts()` and `asyncio.run(srv.mcp.get_prompt(...))`
 
+## Documentation Discipline
+
+**Mandatory before any feature is considered complete** (required by Constitution v1.3.0, Principle I).
+
+Every feature MUST include a documentation impact review. Before closing a PR, check whether changes affect any of the following — and update them in the same PR:
+
+| Document | Update when... |
+|----------|---------------|
+| `README.md` | New/changed tools, prompts, CLI flags, setup steps, or user-facing behaviour |
+| `docs/investigation-flow.md` | Workflow steps, specialist domains, coordinator behaviour, or diagram topology change |
+| `CONTRIBUTING.md` | Dev workflow, testing approach, or project conventions change |
+| `CLAUDE.md` | New conventions, gotchas, or patterns discovered during implementation |
+| Architecture diagrams (mermaid) | Component relationships, data flow, or dispatch patterns change |
+| Prompt table in README | Prompt signatures, descriptions, or argument lists change |
+| `docker-compose.yml` comments | Container topology, env vars, or service dependencies change |
+
+Rules:
+- Documentation updates land in the **same PR** as the code change — not "we'll do it later"
+- If no docs are affected, note it explicitly in the PR description: "Docs impact: none"
+- Stale documentation is worse than no documentation — it actively misleads
+
 ## Pre-Push Sanity Check
 
 **Mandatory before any `git push`** (required by Constitution v1.2.0, Principle II).
@@ -210,6 +231,7 @@ The check runs in order: lint → format → unit+integration tests (≥80% cove
 - N/A — stateless tool; no persistence (006-quick-investigate)
 - Python 3.11+ + `mcp[cli]` ≥1.2.0 (FastMCP), `pydantic` v2.x — no new dependencies (010-specialist-agents)
 - N/A — prompts are stateless text generators (010-specialist-agents)
+- Python 3.11+ + `mcp[cli]` ≥1.2.0 (FastMCP), `pydantic` v2.x — no new dependencies (011-specialist-baselining)
 
 ## Recent Changes
 - 002-add-integration-e2e-tests: Added Python 3.11+ + `mcp[cli]` ≥1.26.0 (FastMCP + ClientSession), `anyio` (memory streams), `respx` (already present — mocks httpx for integration tier), `pytest-asyncio` (already present)
