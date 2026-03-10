@@ -96,6 +96,7 @@ podman compose down
 
 - PCP image **requires `privileged: true`** — it uses systemd as PID 1; without it the container exits immediately (code 255)
 - Redis host env var is **`KEY_SERVERS: redis-stack:6379`** (NOT `PCP_REDIS_HOST`) — that's what the container entrypoint reads; wrong value causes pmproxy to hang on all series/search calls
+- **Podman splits `CMD` array args on semicolons** — Python one-liners with `;` get mangled. Always use `CMD-SHELL` for healthchecks containing semicolons: `["CMD-SHELL", "python -c 'import foo; foo.bar()'"]`
 
 ## Grafana Compose Gotchas
 
