@@ -1,6 +1,13 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.2.0 → 1.3.0 (2026-03-10)
+Amendment: Principle I — added mandatory documentation impact review requirement
+Templates updated:
+  ✅ .specify/memory/constitution.md — this file
+  ✅ .specify/templates/plan-template.md — Constitution Check row added for Principle I docs gate
+  ✅ CLAUDE.md — Documentation Discipline section added with concrete checklist
+
 Version change: 1.1.0 → 1.2.0 (2026-02-27)
 Amendment: Principle II — added story-scoped TDD decomposition requirement
 
@@ -51,10 +58,15 @@ clean, comprehensible, and internally consistent.
 - Code reviews MUST be completed by at least one peer before merging to any protected branch.
 - Dead code, commented-out blocks, and orphaned files MUST be removed rather than retained.
 - All dependencies MUST be explicitly declared; implicit transitive reliance is prohibited.
+- Every feature MUST include a documentation impact review before completion. Changes that affect
+  user-facing behaviour, architecture, public APIs, or operational procedures MUST update the
+  relevant documentation (README, design docs, architecture diagrams, contributor guides) in the
+  same PR. Documentation debt is treated with the same urgency as code debt.
 
 **Rationale**: Technical debt compounds. Defects caught at review time cost an order of magnitude
 less to fix than those discovered post-deployment. Consistent quality lowers onboarding time and
-reduces cognitive overhead for the entire team.
+reduces cognitive overhead for the entire team. Stale documentation is worse than no documentation —
+it actively misleads.
 
 ### II. Testing Standards (NON-NEGOTIABLE)
 
@@ -161,6 +173,7 @@ Every pull request MUST pass all of the following gates before merge:
 - [ ] Performance budget checks pass in CI (Principle IV)
 - [ ] At least one peer code review approved (Principle I)
 - [ ] Constitution Check section in `plan.md` completed with pass/fail per principle (all)
+- [ ] Documentation impact reviewed — README, design docs, architecture diagrams updated if affected (Principle I)
 - [ ] Any principle violations documented in the Complexity Tracking table with justification
 
 Compliance reviews MUST be conducted at the start of each feature (Constitution Check in
@@ -200,4 +213,4 @@ For runtime development guidance and active technology context, see agent files 
 
 ---
 
-**Version**: 1.2.0 | **Ratified**: 2026-02-20 | **Last Amended**: 2026-02-27
+**Version**: 1.3.0 | **Ratified**: 2026-02-20 | **Last Amended**: 2026-03-10
