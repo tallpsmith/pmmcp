@@ -91,8 +91,8 @@ mcp-grafana service health after compose stack startup.
 
 ### Implementation for User Story 3
 
-- [ ] T011 [US3] Add "Wait for Grafana" step to .github/workflows/ci.yml E2E job after the "Wait for pmproxy" step — poll `http://localhost:3000/api/health` until healthy (same pattern as pmproxy wait)
-- [ ] T012 [US3] Add `GRAFANA_URL: http://localhost:3000` to the env section of the E2E job in .github/workflows/ci.yml
+- [x] T011 [US3] Add "Wait for Grafana" step to .github/workflows/ci.yml E2E job after the "Wait for pmproxy" step — poll `http://localhost:3000/api/health` until healthy (same pattern as pmproxy wait)
+- [x] T012 [US3] Add `GRAFANA_URL: http://localhost:3000` to the env section of the E2E job in .github/workflows/ci.yml
 - [ ] T013 [US3] Verify: run existing E2E tests locally with compose stack to confirm no regressions (SC-005)
 
 **Checkpoint**: CI workflow includes Grafana services and passes all tests

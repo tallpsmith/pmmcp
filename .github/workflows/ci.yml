@@ -102,6 +102,7 @@ jobs:
     timeout-minutes: 10
     env:
       PMPROXY_URL: http://localhost:44322
+      GRAFANA_URL: http://localhost:3000
 
     steps:
       - uses: actions/checkout@v4
@@ -122,6 +123,14 @@ jobs:
           echo "Waiting for pmproxy..."
           for i in $(seq 1 30); do
             curl -sf http://localhost:44322/pmapi/context?hostspec=localhost && break
+            sleep 2
+          done
+
+      - name: Wait for Grafana
+        run: |
+          echo "Waiting for Grafana..."
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/api/health && break
             sleep 2
           done
 
