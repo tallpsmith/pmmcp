@@ -149,6 +149,41 @@ After all specialists have reported (or failed), synthesise their findings:
 - Process: ...
 - Cross-cutting: ...
 ```
+
+## Phase 3 — Visualisation
+
+After synthesis, create a visual record of the investigation:
+
+### Grafana Dashboard (preferred)
+
+If `mcp-grafana` tools are available in this session:
+
+1. Create (or find) a folder named **`pmmcp-triage`** using `mcp-grafana.search_folders` / \
+`mcp-grafana.create_folder`.
+2. Create a dashboard using `mcp-grafana.update_dashboard`:
+   - **Title**: `YYYY-MM-DD <short summary>` (e.g., `2026-03-10 memory cascade saas-prod-01`)
+   - **Tags**: always include `pmmcp-generated`
+   - **Folder**: `pmmcp-triage`
+   - **Panels**: one panel per key finding — memory, swap, CPU, disk, network as relevant. \
+Use the PCP datasource UID discovered during session preflight.
+3. Call `mcp-grafana.generate_deeplink` and return the dashboard URL to the user.
+
+### HTML Fallback
+
+If mcp-grafana is unavailable, offer to generate a self-contained HTML report:
+- Save to the configured report directory (default `~/.pmmcp/reports/`)
+- Name: `YYYY-MM-DD-<short-summary>.html`
+- Include investigation summary, data tables, and narrative
+
+### Text Fallback
+
+If the user declines both, the synthesised text output from Phase 2 stands on its own.
+
+### Auto-Trigger Heuristic
+
+If your investigation has surfaced findings across 3+ metrics or 2+ subsystems, and you \
+have not already created a visualisation, proactively offer to create a dashboard — don't \
+wait to be asked.
 """
 
     return [{"role": "user", "content": content}]
