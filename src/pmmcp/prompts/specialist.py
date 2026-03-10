@@ -141,6 +141,7 @@ def _specialist_investigate_impl(
     entry = _SPECIALIST_KNOWLEDGE[subsystem]
     display = entry["display_name"]
     prefix = entry["prefix"]
+    is_domain = prefix is not None
 
     # Build context clauses
     host_clause = f" on host **{host}**" if host else " across all monitored hosts"
@@ -149,7 +150,7 @@ def _specialist_investigate_impl(
     request_clause = f"\n\n**Investigation request**: {request}" if request else ""
 
     # Discovery instruction — prefix-based for subsystems with a prefix
-    if prefix:
+    if is_domain:
         discovery = (
             f'Use `pcp_discover_metrics(prefix="{prefix}")` as your **primary discovery** '
             f"mechanism to enumerate all available {display} metrics. Do not rely solely on "
@@ -160,6 +161,65 @@ def _specialist_investigate_impl(
             "This is a cross-cutting investigation — use `pcp_quick_investigate` to scan "
             "ALL namespaces for anomalies, then drill into the subsystems that surface problems."
         )
+
+    # Report guidance — domain subsystems get classification fields
+    report_guidance = entry["report_guidance"]
+    if is_domain:
+        report_guidance += """
+
+### Finding Classification
+
+For **each** finding, assign a classification based on the 7-day baseline:
+
+- **classification**: One of ANOMALY, RECURRING, or BASELINE
+  - **ANOMALY**: `pcp_detect_anomalies` reports a significant z-score AND the pattern \
+does not recur at consistent times in the 7-day timeseries
+  - **RECURRING**: The 7-day timeseries shows repeated spikes at consistent times of day \
+(batch jobs, log rotation, backups, cron jobs) — look for time-of-day correlation
+  - **BASELINE**: Current values are within normal range based on 7-day history (low z-score \
+or no anomaly detected)
+- **baseline_context**: Human-readable comparison to the 7-day baseline \
+(e.g., "CPU idle has been below 15% for the past 7 days")
+- **severity_despite_baseline**: Threshold-based severity independent of classification \
+(critical/warning/info/none). A BASELINE finding with severity=warning means the host's \
+normal operating state is degraded — this is not a new problem, but it is still a problem.
+
+### Chronic Problem Articulation
+
+When a finding is classified as BASELINE but has non-trivial severity_despite_baseline, \
+articulate this clearly: the condition is chronic — it has historically been this way — \
+but "your normal is sick." For example: "CPU idle has been below 10% for a week — this is \
+not a new problem, but the host is chronically saturated."\
+"""
+
+    # Workflow — domain subsystems get a Baseline step after Discover
+    if is_domain:
+        workflow = """\
+1. **Discover** available metrics using the approach above.
+2. **Baseline** — establish the 7-day historical context:
+   a. Fetch 7-day historical data at 1hour interval using `pcp_fetch_timeseries` for your \
+key metrics.
+   b. Run `pcp_detect_anomalies` comparing the current investigation window against the \
+7-day baseline to identify statistically significant deviations.
+   c. Note the anomaly results — you will use them in the Analyse step to classify findings.
+   d. **Graceful degradation**: If `pcp_detect_anomalies` returns insufficient data (few or \
+no results — common for new hosts, recent PCP deployments, or archive gaps), fall back to \
+threshold-only analysis. Note "insufficient baseline data, falling back to threshold-only \
+analysis" in your report. If data is sparse (gaps from PCP restarts), attempt detection but \
+note reduced confidence. If 0 days of history are available, skip this Baseline step entirely.
+3. **Fetch** key metrics with `pcp_fetch_timeseries` at an appropriate interval for the \
+current investigation window.
+4. **Analyse** using the domain knowledge heuristics — check thresholds, correlations, \
+trends. Use the baseline results from step 2 to classify each finding.
+5. **Report** each finding in the structured format described above, including classification.
+6. **Recommend** next steps — immediate actions, further investigation, or escalation."""
+    else:
+        workflow = """\
+1. **Discover** available metrics using the approach above.
+2. **Fetch** key metrics with `pcp_fetch_timeseries` at an appropriate interval.
+3. **Analyse** using the domain knowledge heuristics — check thresholds, correlations, trends.
+4. **Report** each finding in the structured format described above.
+5. **Recommend** next steps — immediate actions, further investigation, or escalation."""
 
     content = f"""\
 You are a **{display} specialist** conducting a focused performance investigation\
@@ -177,15 +237,11 @@ Apply these investigation heuristics systematically:
 
 ## Reporting Structure
 
-{entry["report_guidance"]}
+{report_guidance}
 
 ## Workflow
 
-1. **Discover** available metrics using the approach above.
-2. **Fetch** key metrics with `pcp_fetch_timeseries` at an appropriate interval.
-3. **Analyse** using the domain knowledge heuristics — check thresholds, correlations, trends.
-4. **Report** each finding in the structured format described above.
-5. **Recommend** next steps — immediate actions, further investigation, or escalation.
+{workflow}
 
 If you find no anomalies, say so explicitly — "no anomalies found in {display}" is a valid result.
 """
